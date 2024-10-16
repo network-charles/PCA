@@ -1,0 +1,9 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30909 # The k8s service port
+    hostPort: 9090 # The host port you want to expose the k8s service
+    protocol: TCP
+- role: worker
