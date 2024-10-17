@@ -1,3 +1,6 @@
 # Lab 01
-Node exporter
+Node exporter installed in a K8s cluster
+
+# Lab 02
+Prometheus installed on bare metal and ran as a service
 

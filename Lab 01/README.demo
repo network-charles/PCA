@@ -1,4 +1,4 @@
-# Node exporter
+# Node exporter installed in a K8s cluster
 
 # Create cluster
 kind create cluster --config cluster.yaml
@@ -21,12 +21,12 @@ curl checkip.amazonaws.com
 # Access prometheus
 curl localhost:9090
 
-# Apply a pod monitor
-kubectl get prometheuses.monitoring.coreos.com -o yaml # view the serviceMonitorSelector label
-kubectl apply -f pod-monitor.yaml
-
 # Query prometheus
 View all metrics starting with "node"
+
+# The node exporter is installed as a daemonset and exposed as a service
+kubectl get daemonset
+kubectl get service | grep node
 
 # Delete cluster
 kind delete cluster
