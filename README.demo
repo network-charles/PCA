@@ -10,4 +10,6 @@ Node exporter installed on bare metal and ran as a systemd service
 # Lab 04
 Scrape metrics from from a new target
 
+# Lab 05
+Add authentication and encryption when scraping a target
 

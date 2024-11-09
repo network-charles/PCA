@@ -33,5 +33,13 @@ systemctl restart prometheus
 # Expose cloud9 security group to the internet
 ##############################################
 
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+# Verify if target is up on the prometheus web page
+
 # Delete cluster
 kind delete cluster

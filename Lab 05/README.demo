@@ -1,0 +1,147 @@
+# Add authentication and encryption when scraping a target
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 03
+# Repeat everything in Lab 02 except creating a clusters
+# Repeat everything in Lab 04
+
+# Access worker node
+docker exec -it kind-worker bash
+apt install vim -y
+cd /etc/node_exporter
+
+# Create an ssl certificate and key for the node exporter
+openssl req -new -newkey rsa:2048 -days 365 -nodes -x509 \
+  -keyout node_exporter.key -out node_exporter.crt \
+  -subj "/C=US/ST=California/L=Oakland/O=MyOrg/CN=localhost" \
+  -addext "subjectAltName=DNS:localhost,IP:172.18.0.3"
+
+# Create a config file to customize the behavior of the node_exporter
+vi config.yaml
+
+tls_server_config:
+  cert_file: node_exporter.crt
+  key_file: node_exporter.key
+
+# Try it without a systemd service
+./node_exporter --web.config.file=config.yaml 
+
+# curl to the node_exporter
+curl https://172.18.0.3:9100/metrics
+curl -k https://3.8.159.141:9100/metrics
+
+
+#######################################################
+
+
+# close the process and try it as a service
+
+
+# Make a new node_exporter folder
+mkdir /etc/node_exporter
+cp node_exporter.* /etc/node_exporter
+cp config.yaml /etc/node_exporter
+
+# Update the permissions of the folder
+chown -R node_exporter:node_exporter /etc/node_exporter
+
+# Update the service file to include the authentication
+vi /etc/systemd/system/node_exporter.service
+
+[Service]
+ExecStart=/usr/local/bin/node_exporter --web.config.file=/etc/node_exporter/config.yaml
+
+# Reload the systemd daemon
+systemctl daemon-reload
+
+# Restart the node_exporter service
+systemctl restart node_exporter
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+# curl to the node_exporter and notice it requires authentication
+curl https://localhost:9100/metrics
+curl -k https://localhost:9100/metrics      # use -k to skip authentication
+
+# Configure a prometheus TLS by copying the cert to the kind-control-plane node
+docker cp kind-worker:/node_exporter-1.8.2.linux-amd64/node_exporter.crt ~/environment/PCA/Lab\ 05
+docker cp ~/environment/PCA/Lab\ 05/node_exporter.crt kind-control-plane:/etc/prometheus
+
+# Access control-plane node
+docker exec -it kind-control-plane bash
+
+# Update the configuration of the prometheus.yml file to use TLS
+cd /etc/prometheus
+chown prometheus:prometheus node_exporter.crt 
+vi prometheus.yml
+
+  - job_name: "node"
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/node_exporter.crt
+      insecure_skip_verify: false
+    static_configs:
+      - targets: ['172.18.0.3:9100']
+      
+# Restart the prometheus service
+systemctl restart prometheus
+
+##############################################
+##############################################
+
+# Access worker node
+docker exec -it kind-worker bash
+
+# Generate a hash password
+htpasswd -nBC 10 "" | tr -d ':\n'
+
+# I chose "admin" as my password
+$2y$10$7XC7PrFi2cqXArXeS.o4S.8sUAfAV.s1uMiMTVnWnYO.Do8vO1To.
+
+# Add a new user to the node_exporter config file
+vi /etc/node_exporter/config.yaml
+
+basic_auth_users:
+  admin: $2y$10$7XC7PrFi2cqXArXeS.o4S.8sUAfAV.s1uMiMTVnWnYO.Do8vO1To.
+
+# Try to authenticate using the username and password
+curl -k https://172.18.0.3:9100 -u admin:admin
+
+##############################################
+##############################################
+
+# We will now update the prometheus service to use this username and password
+
+# Access control-plane node
+docker exec -it kind-control-plane bash
+
+# Update the configuration of the prometheus.yml file to use the username and password
+cd /etc/prometheus
+vi prometheus.yml
+
+  - job_name: "node"
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/node_exporter.crt
+      insecure_skip_verify: false
+    basic_auth:
+      username: admin
+      password: admin
+    static_configs:
+      - targets: ['172.18.0.3:9100']
+
+# Restart the prometheus service
+systemctl restart prometheus
+
+# Delete cluster
+kind delete cluster
