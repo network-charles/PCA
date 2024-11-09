@@ -1,4 +1,11 @@
-# Prometheus installed on bare metal and ran as a service
+# Prometheus installed on bare metal and ran as a systemd service
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Access node
+docker exec -it kind-control-plane bash
+apt update && apt install wget nano
 
 # install prometheus
 wget https://github.com/prometheus/prometheus/releases/download/v2.54.1/prometheus-2.54.1.linux-amd64.tar.gz
@@ -29,40 +36,40 @@ View all metrics starting with "node"
 cd prometheus-2.54.1.linux-amd64/
 
 # create a user who can't log in
-sudo useradd --no-create-home --shell /bin/false prometheus
+useradd --no-create-home --shell /bin/false prometheus
 
 # create a folder for the scrape file and copy the file into it
-sudo mkdir /etc/prometheus
-sudo cp prometheus.yml /etc/prometheus
+mkdir /etc/prometheus
+cp prometheus.yml /etc/prometheus
 
 # create a folder for the prometheus data files
-sudo mkdir /var/lib/prometheus
+mkdir /var/lib/prometheus
 
 # assign the prometheus user to the new folders
-sudo chown prometheus:prometheus /etc/prometheus
-sudo chown prometheus:prometheus /etc/prometheus/prometheus.yml
-sudo chown prometheus:prometheus /var/lib/prometheus
+chown prometheus:prometheus /etc/prometheus
+chown prometheus:prometheus /etc/prometheus/prometheus.yml
+chown prometheus:prometheus /var/lib/prometheus
 
 # move the executable to the /usr/bin/ directory
-sudo cp prometheus /usr/local/bin/
+cp prometheus /usr/local/bin/
 
 # move the cli tool to the /usr/bin/ directory
-sudo cp promtool /usr/local/bin/
+cp promtool /usr/local/bin/
 
 # assign the prometheus user to the folders
-sudo chown prometheus:prometheus /usr/local/bin/prometheus
-sudo chown prometheus:prometheus /usr/local/bin/promtool
+chown prometheus:prometheus /usr/local/bin/prometheus
+chown prometheus:prometheus /usr/local/bin/promtool
 
 # move the UI file to /etc/prometheus
-sudo cp -r consoles /etc/prometheus
-sudo cp -r console_libraries /etc/prometheus
+cp -r consoles /etc/prometheus
+cp -r console_libraries /etc/prometheus
 
 # assign the prometheus user to the folders
-sudo chown -R prometheus:prometheus /etc/prometheus/consoles/
-sudo chown -R prometheus:prometheus /etc/prometheus/console_libraries
+chown -R prometheus:prometheus /etc/prometheus/consoles/
+chown -R prometheus:prometheus /etc/prometheus/console_libraries
 
 # create the systemd service
-sudo vi /etc/systemd/system/prometheus.service
+nano /etc/systemd/system/prometheus.service
 
 # add the below command
 [Unit]
@@ -84,13 +91,16 @@ ExecStart=/usr/local/bin/prometheus \
 WantedBy=multi-user.target
 
 # Reload the systemd daemon
-sudo systemctl daemon-reload
+systemctl daemon-reload
 
 # Start the prometheus service
-sudo systemctl start prometheus.service
+systemctl start prometheus.service
 
 # view the status of the prometheus service
-sudo systemctl status prometheus.service 
+systemctl status prometheus.service 
 
 # Enable it to start on boot:
-sudo systemctl enable prometheus
+systemctl enable prometheus
+
+# Delete cluster
+kind delete cluster

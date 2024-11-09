@@ -1,0 +1,37 @@
+# Scrape metrics from a new target
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 03
+# Repeat everything in Lab 02 except creating a clusters
+
+# Access node
+docker exec -it kind-control-plane bash
+apt install wget nano vim
+
+# get the node ip addresses
+kubectl get node -o wide
+
+kind-control-plane 172.18.0.2
+kind-worker 172.18.0.3
+
+# Go to the directory and modify the file containing tbhe scrape config
+cd /etc/prometheus/
+vi prometheus.yml
+
+# create a new job
+
+  - job_name: "node"
+    static_configs:
+      - targets: ['172.18.0.3:9100'] 
+
+# restart the running process to apply the config
+systemctl restart prometheus
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# Delete cluster
+kind delete cluster

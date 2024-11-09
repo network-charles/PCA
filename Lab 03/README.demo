@@ -1,0 +1,78 @@
+# Node exporter installed on bare metal and ran as a systemd service
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02 except creating a clusters
+
+# Access node
+docker exec -it kind-worker bash
+apt update && apt install wget nano
+
+# install node-exporter
+wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
+tar xvfz node_exporter-*.*-amd64.tar.gz
+cd node_exporter-*.*-amd64
+./node_exporter
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+# Query prometheus
+View all metrics starting with "node"
+
+
+#######################################################
+
+
+# close the process and make it a service
+
+
+# copy the node_exporter file
+cp node_exporter /usr/local/bin
+
+# create a user who can't log in
+useradd --no-create-home --shell /bin/false node_exporter
+
+# assign the node-exporter user to the directory
+chown node_exporter:node_exporter /usr/local/bin/node_exporter
+
+# create the systemd service
+nano /etc/systemd/system/node_exporter.service
+
+# add the below command
+[Unit]
+Description=node_exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/usr/local/bin/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+
+# Reload the systemd daemon
+systemctl daemon-reload
+
+# Start the node_exporter service
+systemctl start node_exporter.service
+
+# view the status of the node_exporter service
+systemctl status node_exporter.service 
+
+# Enable it to start on boot:
+systemctl enable node_exporter
+
+# Delete cluster
+kind delete cluster

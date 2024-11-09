@@ -4,3 +4,10 @@ Node exporter installed in a K8s cluster
 # Lab 02
 Prometheus installed on bare metal and ran as a service
 
+# Lab 03
+Node exporter installed on bare metal and ran as a systemd service
+
+# Lab 04
+Scrape metrics from from a new target
+
+
