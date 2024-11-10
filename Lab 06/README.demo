@@ -1,0 +1,61 @@
+# Selectors and matchers
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Install prometheus stack
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack              # comes with node exporter on default
+
+# Modify the prometheus service ports
+kubectl patch svc prometheus-kube-prometheus-prometheus -p '{"spec": {"type": "NodePort", "ports": [{"port": 9090, "protocol": "TCP", "nodePort": 30909}]}}'
+
+sleep 10
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+You can use the following selectors:
+= label exact match
+!= not the label/regex match
+~= match the regex
+
+# Use selectors to match a specific mountpoint
+node_filesystem_avail_bytes{mountpoint="/etc/hostname"}
+
+# Use selectors to match all devices starting with "/dev/"
+node_filesystem_avail_bytes{device=~"/dev/.*"}
+
+# Match all devices not starting with "/boot"
+node_filesystem_avail_bytes{device!~"/boot.*"}
+
+# Match all data from the "172.18.0.2:9100" instance excluding entries where "device=rmfs"
+node_filesystem_avail_bytes{instance="172.18.0.2:9100", nodedevice!~"rmfs"}
+
+##############################################
+
+You can match a metric over a specific time (range vector):
+seconds [s]
+minutes [m]
+hours [h]
+days [d]
+
+# Match all data from the "172.18.0.2:9100" instance in the last 1 minute
+node_filesystem_avail_bytes{instance="172.18.0.2:9100"}[1m]
+
+# Match all data from the "172.18.0.2:9100" instance in the last 1 day, 1 minute
+node_filesystem_avail_bytes{instance="172.18.0.2:9100"}[1d1m]
+
+# Delete cluster
+kind delete cluster
