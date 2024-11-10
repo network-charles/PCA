@@ -1,0 +1,35 @@
+# Visualization expression browser
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Install prometheus stack
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack              # comes with node exporter on default
+
+# Modify the prometheus service ports
+kubectl patch svc prometheus-kube-prometheus-prometheus -p '{"spec": {"type": "NodePort", "ports": [{"port": 9090, "protocol": "TCP", "nodePort": 30909}]}}'
+kubectl patch svc prometheus-prometheus-node-exporter -p '{"spec": {"type": "NodePort", "ports": [{"port": 9100, "protocol": "TCP", "nodePort": 30910}]}}'
+
+sleep 10
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+query=node_filesystem_avail_bytes{device="tmpfs"}
+
+Click on the Graph box to view visualize the result of the query.
+
+# Delete cluster
+kind delete cluster

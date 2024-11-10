@@ -1,0 +1,60 @@
+# Console templates
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03 and 04 except creating a clusters
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Go to the consoles folder to view default dashboards html files
+cd /etc/prometheus/consoles/
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+To view the dashboards append the html file name to localhost after appending the "consoles" path
+
+> localhost:9090/consoles/node-cpu.html
+
+##############################################
+##############################################
+
+# Create a new dashboard
+cd /etc/prometheus/consoles/
+apt install vim -y
+vi filesystem.html
+
+{{template "head" .}}
+{{template "prom_content_head" .}}
+<h1>Memory details</h1>
+
+availabel memory: {{template "prom_query_drilldown" (args "node_filesystem_avail_bytes{mountpoint='/etc/hostname'}") }}
+{{template "prom_content_tail" .}}
+{{template "tail"}}
+
+# Add a chart just above the boilerplate {{template "prom_content_tail" .}}
+<div id="graph"></div>
+<script>
+new PromConsole.Graph({
+node: document.querySelector("#graph"),
+expr: "rate(node_memory_Active_bytes [2m])"
+})
+</script>
+
+# Delete cluster
+kind delete cluster
