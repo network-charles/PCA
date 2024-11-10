@@ -10,6 +10,7 @@ helm install prometheus prometheus-community/kube-prometheus-stack              
 
 # Modify the prometheus service ports
 kubectl patch svc prometheus-kube-prometheus-prometheus -p '{"spec": {"type": "NodePort", "ports": [{"port": 9090, "protocol": "TCP", "nodePort": 30909}]}}'
+kubectl patch svc prometheus-prometheus-node-exporter -p '{"spec": {"type": "NodePort", "ports": [{"port": 9100, "protocol": "TCP", "nodePort": 30910}]}}'
 
 ##############################################
 # Expose cloud9 security group to the internet

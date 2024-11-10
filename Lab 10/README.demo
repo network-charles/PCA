@@ -1,4 +1,4 @@
-# Modifiers
+# Functions
 
 # Create cluster
 kind create cluster --config cluster.yaml
@@ -26,25 +26,37 @@ curl localhost:9090
 
 ##############################################
 ##############################################
-Modifiers check for data as it was in the past without adding the current time.
-So, if the current time is 12 pm, checking for data 5 mins ago, will show the data
-as it was at exactly 11:55 am.
 
-Syntax:
-offset time
-@ date & time (unix timestamp)
+# round up to the closest integer
+ceil(node_cpu_seconds_total{cpu="0"})
 
-# Use selectors to match a specific mountpoint and a modifier to get data as it was 5 minutes ago
-node_filesystem_avail_bytes{mountpoint="/etc/hostname"} offset 5m
+# round down to the closest integer
+floor(node_cpu_seconds_total{cpu="0"})
 
-# Use selectors to match all devices starting with "/dev/" and a modifier to get data as it was November 10, 2024, 05:35:02 AM
-node_filesystem_avail_bytes{device=~"/dev/.*"} @1731216902.731
+# subtract current time from when the apiserver launched
+time() - process_start_time_seconds{job="apiserver"}
 
-# Match all devices not starting with "/boot" and a modifier to get data as it was November 10, 2024, 05:35:02 AM, 5 minutes ago (05:30:02 AM)
-node_filesystem_avail_bytes{device!~"/boot.*"} @1731216902.731 offset 5m
+# scalarize a metric
+scalar(process_start_time_seconds{job="apiserver"})
 
-# Match all data and get 2 mins worth of data as it was November 10, 2024, 05:35:02 AM, 5 minutes ago (05:30:02 AM)
-node_filesystem_avail_bytes{}[2m] @1731216902.731
+# sort in ascending order
+sort(node_filesystem_avail_bytes)
+
+# sort in descending order
+sort_desc(node_filesystem_avail_bytes)
+
+##############################################
+##############################################
+
+# rate at which a counter increaases
+# Subtracts the max - min value within a specific time, and divides the result by that specific time interval.
+# min of 4 samples values
+rate(node_network_transmit_bytes_total[1m])
+
+# irate
+# Subtracts the last two max values within a specific time, and divides the result by a fraction of that specific time interval within the values.
+# min of 4 samples values
+irate(node_network_transmit_bytes_total[1m])
 
 # Delete cluster
 kind delete cluster
