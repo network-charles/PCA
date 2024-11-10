@@ -1,4 +1,4 @@
-# Functions
+# Subqueries
 
 # Create cluster
 kind create cluster --config cluster.yaml
@@ -27,36 +27,8 @@ curl localhost:9090
 ##############################################
 ##############################################
 
-# round up to the closest integer
-ceil(node_cpu_seconds_total{cpu="0"})
-
-# round down to the closest integer
-floor(node_cpu_seconds_total{cpu="0"})
-
-# subtract current time from when the apiserver launched
-time() - process_start_time_seconds{job="apiserver"}
-
-# scalarize a metric
-scalar(process_start_time_seconds{job="apiserver"})
-
-# sort in ascending order
-sort(node_filesystem_avail_bytes)
-
-# sort in descending order
-sort_desc(node_filesystem_avail_bytes)
-
-##############################################
-##############################################
-
-# rate at which a counter increaases over a 1 mins window
-# Subtracts the max - min value within a specific time, and divides the result by that specific time interval.
-# min of 4 samples values
-rate(node_network_transmit_bytes_total[1m])
-
-# irate
-# Subtracts the last two max values within a specific time, and divides the result by a fraction of that specific time interval within the values.
-# min of 4 samples values
-irate(node_network_transmit_bytes_total[1m])
+# max rate of network transmission speed from the last 5 mins with a 20 secs query interval and sample range (window size) of 1 mins
+max_over_time(rate(node_network_transmit_bytes_total[1m]) [5m:20s])
 
 # Delete cluster
 kind delete cluster

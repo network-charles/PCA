@@ -1,0 +1,73 @@
+# Histogram
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Install prometheus stack
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack              # comes with node exporter on default
+
+# Modify the prometheus service ports
+kubectl patch svc prometheus-kube-prometheus-prometheus -p '{"spec": {"type": "NodePort", "ports": [{"port": 9090, "protocol": "TCP", "nodePort": 30909}]}}'
+kubectl patch svc prometheus-prometheus-node-exporter -p '{"spec": {"type": "NodePort", "ports": [{"port": 9100, "protocol": "TCP", "nodePort": 30910}]}}'
+
+sleep 10
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# How many authorization requests finished in less than or equal to 0.002 seconds
+authorization_duration_seconds_bucket{le="0.002"}
+
+# Overall authorization requests finished regardless of their duration (less than positive infinity)
+authorization_duration_seconds_bucket{le="+Inf"}
+
+# To get the average latency a request took for a specific window, divide the sum of request latency time by the total amount of requests
+rate(apiserver_request_duration_seconds_sum[1m]) / rate(apiserver_request_duration_seconds_count[1m])
+
+##############################################
+##############################################
+
+Many applications define SLOs (Service-Level Objectives) based on latency. For example, an SLO might specify
+that 99% of requests should complete within 100ms. Calculating the percentage of requests that fall within a
+certain latency bucket lets you easily assess if you're meeting such targets
+
+# The percentage of requests that completed in 0.025 secs or less over the past 1 mins.
+rate(etcd_request_duration_seconds_bucket{le="0.025"}[1m]) / rate(etcd_request_duration_seconds_bucket[1m]) * 100
+
+##############################################
+##############################################
+
+Quantiles represented in percentage, determine how many values are above/below a limit. Works with a bucket metric.
+Used for SLOs too.
+
+# How long 70% of API server requests are taking to complete
+histogram_quantile(0.70, apiserver_request_duration_seconds_bucket)
+
+##############################################
+##############################################
+
+Histogram buckets are saved in a seperate time series DB, so too many buckets mean more CPU, or RAM consumption.
+
+##############################################
+##############################################
+
+Summary metric has a sum, count, and quantiles.
+The quantiles here work similarly to a histogram_quantile.
+
+# The responsiveness of Prometheus when sending 50% of notifications
+prometheus_notifications_latency_seconds{quantile="0.5"}
+
+# Delete cluster
+kind delete cluster
