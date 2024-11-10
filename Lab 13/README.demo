@@ -1,0 +1,49 @@
+# Recording rules
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03 and 04 except creating a clusters
+
+##############################################
+##############################################
+
+Recording rules evaluates a promql query and stores the results. Rules are ran sequentially, and can also be referenced.
+Each rule group should be specific to a scraping job.
+
+Rule naming syntax = level:metric_name:operations
+level is the aggregation level by labels
+
+# Create a rule
+apt install vim -y
+cd /etc/prometheus
+vi first_rules.yml
+
+groups:
+  - name: example1
+    interval: 15s
+    rules:
+      - record: node_filesystem_free_percent
+        expr: 100 * node_filesystem_free_bytes{job="node"} / node_filesystem_size_bytes{job="node"}
+      - record: node_filesystem_free_percent_avg
+        expr: avg by(instance) (node_filesystem_free_percent)
+        
+vi prometheus.yml
+
+rule_files:
+  - "first_rules.yml"
+  
+# Restart prometheus and check rules on your prometheus browser page
+systemctl restart prometheus
+
+# node_filesystem_free_bytes (Free space for for both root and non-root)
+# node_filesystem_avail_bytes (Usable space only for non-root users)
+# The ratio=1: All free space is accessible to non-root users (no reserved space).
+# Ratio = 1.2: There’s 20% more total free space than what non-root users can access.
+# Higher Ratio (e.g., 1.5 or 2): Significant portion of free space is reserved, with only a fraction available to non-root users.
+
+# Percentage of free space available on filesystem, filtered by the job label.
+100 * node_filesystem_free_bytes{job="node"} / node_filesystem_size_bytes{job="node"}
+
+# Delete cluster
+kind delete cluster

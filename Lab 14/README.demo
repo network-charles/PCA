@@ -1,0 +1,25 @@
+# HTTP API
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03 and 04 except creating a clusters
+
+##############################################
+##############################################
+
+The HTTP API execute queries, gathers info on alerts, rules, and service discovery configs.
+An alternative to the GUI.
+
+API URL = localhost:9090/api/v1/query
+
+Example 1:
+curl localhost:9090/api/v1/query --data 'query=node_filesystem_avail_bytes{device="tmpfs"}' | jq
+
+Example 2 query with timestamp:
+curl localhost:9090/api/v1/query --data 'query=node_filesystem_avail_bytes{device="tmpfs"}' --data 'time=1731263204.74' | jq
+
+> pipe to jq so the json is formatted to be readable.
+
+# Delete cluster
+kind delete cluster
