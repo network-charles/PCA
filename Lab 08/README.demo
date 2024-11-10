@@ -1,0 +1,70 @@
+# Operators
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Install prometheus stack
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack              # comes with node exporter on default
+
+# Modify the prometheus service ports
+kubectl patch svc prometheus-kube-prometheus-prometheus -p '{"spec": {"type": "NodePort", "ports": [{"port": 9090, "protocol": "TCP", "nodePort": 30909}]}}'
+
+sleep 10
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+Operators are for mathematical operations.
++ add
+- subtract
+* multiply
+/ divide
+% modulor
+^ power
+> greater than
+< less than
+bool 1 true
+bool 0 false
+
+# View the memory and convert it to kilobytes
+node_memory_Active_bytes / 1024
+
+# View all interfaces that have recieved over 1000 packets
+node_network_receive_packets_total{device=~".*"} > 1000
+
+# Returns true if the node-exporter is up
+up{job="node-exporter"} == 1
+
+# Returns true or false for systems having greater 1000 bytes available
+node_filesystem_avail_bytes > bool 1000
+
+##############################################
+##############################################
+
+# Operators order of precedence
+1. ^ (operations on this level starts calculating from the right)
+2. *, /, %, atan2 (operations on this level starts calculating from the left)
+3. +, -
+4. ==, !=, <=, <, >=, >
+5. and, unless
+6. or
+
+# Returns all data greater or less than a value
+node_network_receive_packets_total > 10000 or node_network_receive_packets_total < 50000
+
+# Returns all data greater unless they are greater than a value
+node_network_receive_packets_total > 10000 unless node_network_receive_packets_total > 50000
+
+# Delete cluster
+kind delete cluster

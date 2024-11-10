@@ -50,6 +50,9 @@ seconds [s]
 minutes [m]
 hours [h]
 days [d]
+weeks [y]
+years [y]
+milisecons [ms]
 
 # Match all data from the "172.18.0.2:9100" instance in the last 1 minute
 node_filesystem_avail_bytes{instance="172.18.0.2:9100"}[1m]

@@ -1,0 +1,49 @@
+# Modifiers
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Install prometheus stack
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack              # comes with node exporter on default
+
+# Modify the prometheus service ports
+kubectl patch svc prometheus-kube-prometheus-prometheus -p '{"spec": {"type": "NodePort", "ports": [{"port": 9090, "protocol": "TCP", "nodePort": 30909}]}}'
+
+sleep 10
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+Modifiers check for data as it was in the past without adding the current time.
+So, if the current time is 12 pm, checking for data 5 mins ago, will show the data
+as it was at exactly 11:55 am.
+
+Syntax:
+offset time
+@ date & time (unix timestamp)
+
+# Use selectors to match a specific mountpoint and a modifier to get data as it was 5 minutes ago
+node_filesystem_avail_bytes{mountpoint="/etc/hostname"} offset 5m
+
+# Use selectors to match all devices starting with "/dev/" and a modifier to get data as it was November 10, 2024, 05:35:02 AM
+node_filesystem_avail_bytes{device=~"/dev/.*"} @1731216902.731
+
+# Match all devices not starting with "/boot" and a modifier to get data as it was November 10, 2024, 05:35:02 AM, 5 minutes ago (05:30:02 AM)
+node_filesystem_avail_bytes{device!~"/boot.*"} @1731216902.731 offset 5m
+
+# Match all data and get 2 mins worth of data as it was November 10, 2024, 05:35:02 AM, 5 minutes ago (05:30:02 AM)
+node_filesystem_avail_bytes{}[2m] @1731216902.731
+
+# Delete cluster
+kind delete cluster
