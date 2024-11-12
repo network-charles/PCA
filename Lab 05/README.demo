@@ -4,7 +4,7 @@
 kind create cluster --config cluster.yaml
 
 # Repeat everything in Lab 03
-# Repeat everything in Lab 02 except creating a clusters
+# Repeat everything in Lab 02 except creating a cluster
 # Repeat everything in Lab 04
 
 # Access worker node

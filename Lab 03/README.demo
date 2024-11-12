@@ -3,7 +3,7 @@
 # Create cluster
 kind create cluster --config cluster.yaml
 
-# Repeat everything in Lab 02 except creating a clusters
+# Repeat everything in Lab 02 except creating a cluster
 
 # Access node
 docker exec -it kind-worker bash

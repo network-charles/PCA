@@ -3,7 +3,7 @@
 # Create cluster
 kind create cluster --config cluster.yaml
 
-# Repeat everything in Lab 02, 03 and 04 except creating a clusters
+# Repeat everything in Lab 02, 03 and 04 except creating a cluster
 
 ##############################################
 ##############################################

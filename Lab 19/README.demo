@@ -1,0 +1,86 @@
+# Re-labeling ("keep" action)
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, 04, and 18 except creating a cluster
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+Re-labeling is a way to classify a target & metric by rewriting its labels. It happens before a scrape.
+
+See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config for all attribute name description.
+
+The "keep" action keeps targets with your specified labels.
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Add a new label to the service discovery file where node job
+cd /etc/prometheus/
+vi file-sd.json
+
+[
+  {
+    "labels": {
+      "job": "node"
+      "env": "dev"
+    },
+    "targets": [
+      "172.18.0.3:9100"
+    ]
+  }
+]
+
+# Add a new label as a static config for the prometheus job
+vi prometheus.yml
+
+scrape_configs:
+- job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          env: "prod"
+
+# Restart prometheus and view targets
+systemctl restart prometheus   
+curl -s http:/localhost:9090/api/v1/targets | jq
+
+##############################################
+##############################################
+
+# Re-label the node
+# Use the "keep" action
+vi prometheus.yml
+
+- job_name: "node"
+  relabel_configs:
+  - source_labels: [env]
+    action:        "keep"
+    regex:         "prod"
+
+# Restart prometheus and view targets
+systemctl restart prometheus   
+curl -s http:/localhost:9090/api/v1/targets | jq
+
+Notice that only the prometheus job which has the env="prod" label is the active target being scraped.
+The node job which has env="dev" is dropped and not being scraped.
+
+    "droppedTargetCounts": {
+      "node": 1,
+      "prometheus": 0
+    }
+
+# Delete cluster
+kind delete cluster
