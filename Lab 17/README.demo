@@ -1,0 +1,60 @@
+# Instrumentations
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03 and 04 except creating a clusters
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Go to the consoles folder to view default dashboards html files
+cd /etc/prometheus/consoles/
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+Instrumentations are a way to get metric from your code using prometheus client libraries.
+
+##############################################
+##############################################
+
+Naming metrics convention
+
+library_name_unit_suffix
+
+library = This identifies the source, system, or protocol generating the metric. E.g. docker, postgresql, http, etc.
+name = Describes the specific resource or activity being measured, like cpu_usage, request_duration, or memory_allocation.
+unit = Indicates the unit of measurement, such as seconds, bytes, count, or percent. 
+suffix = Often used to denote the type of metric, typically based on Prometheus metric types
+like _total for cumulative counters, _bucket for histogram buckets, or _sum and _count for summary metrics. 
+
+For example:
+prometheus_http_requests_total = A counter tracking the total number of HTTP requests served by Prometheus.
+prometheus_http_request_duration_seconds = A histogram measuring the duration of HTTP requests in seconds.
+
+##############################################
+##############################################
+
+What should be instrumented?
+
+Types of services
+1. Online-serving systems: Immediate response is expected. E.g., no of requests or errors.
+2. Offline processing: No one is actively waiting for a response, often working in the background. E.g., No of queued work.
+3. Batch jobs: Ran on a regular schedule. E.g., Last time a job was completed, time processing each stage of a job.
+
+# Delete cluster
+kind delete cluster

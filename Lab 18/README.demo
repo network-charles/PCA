@@ -1,0 +1,60 @@
+# Service discovery
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03 and 04 except creating a clusters
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+Service discovery is the dynamic discovery of new targets to be scraped.
+
+Several SDs exist, with the most popular being the "file" based one.
+To set up a File SD, a json file need to contain each targets to scrape.
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Add your service discovery file 
+cd /etc/prometheus/
+nano file-sd.json
+
+[
+  {
+    "labels": {
+      "job": "node"
+    },
+    "targets": [
+      "172.18.0.3:9100"
+    ]
+  }
+]
+
+# Reference the file in your scrape config and remove the previous "node" target you specified
+vi prometheus.yml
+
+scrape_configs:
+- job_name: "node"
+  file_sd_configs:
+  - files:
+    - "file-sd.json"
+
+# Restart prometheus
+systemctl restart prometheus
+
+- View the "targets" page in your prometheus browser to confirm that the job is in an up state.
+- View the "service discovery" page to view more details about each service you discovered.
+
+# Delete cluster
+kind delete cluster
