@@ -8,7 +8,7 @@ kind create cluster --config cluster.yaml
 
 # Access node
 docker exec -it kind-control-plane bash
-apt install wget nano vim
+apt install wget nano vim -y
 
 # get the node ip addresses
 kubectl get node -o wide

@@ -1,13 +1,6 @@
-# Re-labeling ("keep" action)
+# Re-labeling ("drop" action)
 
-Re-labeling happens before/after a scrape. It does the following:
-
-- Filters out target you don't want to scrape.
-- Rename labels.
-
-See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config for all attribute name description.
-
-The "keep" action keeps targets using the specified labels.
+The "drop" action drop targets using the specified labels.
 
 # Create cluster
 kind create cluster --config cluster.yaml
@@ -64,18 +57,16 @@ curl -s http:/localhost:9090/api/v1/targets | jq
 ##############################################
 ##############################################
 
-# Re-label the node
-# Use the "keep" action
-
+# Re-label the node using the "drop" action
 vi prometheus.yml
 
 - job_name: "node"
   relabel_configs:
   - source_labels: [env]
-    action:        "keep"
-    regex:         "dev"
+    action: "drop"
+    regex: "dev"
 
-This keeps a target in this job if it has the "dev" label. Since one target does, it will be kept.
+This drops a target in this job if it has the "dev" label. Since one target does, it will be dropped.
 
 # Restart prometheus and view targets
 systemctl restart prometheus   
@@ -86,19 +77,19 @@ curl -s http:/localhost:9090/api/v1/targets | jq
     "droppedTargets": [
       {
         "discoveredLabels": {
-          "__address__": "172.18.0.3:9100",
+          "__address__": "172.18.0.4:9100",
           "__meta_filepath": "/etc/prometheus/file-sd.json",
           "__metrics_path__": "/metrics",
           "__scheme__": "http",
           "__scrape_interval__": "15s",
           "__scrape_timeout__": "10s",
-          "env": "stage",
+          "env": "dev",
           "job": "node"
         }
       }
     ]
     
-The "env" label key with a value of "stage" has been dropped.
+The "env" label key with a value of "dev" has been dropped.
 
 # Delete cluster
 kind delete cluster
