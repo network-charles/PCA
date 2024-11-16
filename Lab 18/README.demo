@@ -3,7 +3,7 @@
 # Create cluster
 kind create cluster --config cluster.yaml
 
-# Repeat everything in Lab 02, 03 and 04 except creating a cluster
+# Repeat everything in Lab 02 and 03 except creating a cluster
 
 ##############################################
 # Expose cloud9 security group to the internet

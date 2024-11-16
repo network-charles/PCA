@@ -1,0 +1,94 @@
+# Re-labeling ("labelmap" action)
+
+The "labelmap" replaces a label key. But the previous key will not be deleted.
+To delete the previous key, use a "labeldrop".
+
+The labelmap works similarly to a "replace" action, where a new label key is created
+by specifying it in the target_label attribute.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, and 18 except creating a cluster
+# But in Lab 03 also ssh into kind-worker2
+# In Lab 18, add "172.18.0.4:9100" as a target when creating the service discovery file
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+
+# Add a new label to the service discovery file for each target in the "node" job
+cd /etc/prometheus/
+vi file-sd.json
+
+[
+  {
+    "labels": {
+      "job": "node",
+      "env": "stage"
+    },
+    "targets": [
+      "172.18.0.3:9100"
+    ]
+  },
+  {
+    "labels": {
+      "job": "node",
+      "env": "dev"
+    },
+    "targets": [
+      "172.18.0.4:9100"
+    ]
+  }
+]
+
+##############################################
+##############################################
+
+# Replace the label key "env" with a new name using the "labelmap" action
+vi prometheus.yml
+
+- job_name: "node"
+  relabel_configs:
+  - action: "labelmap"
+    regex: "env"
+    replacement: "workspace"
+
+# Drop the previous label name
+vi prometheus.yml
+
+- job_name: "node"
+  relabel_configs:
+  - action: "labeldrop"
+    regex: "env"
+
+# Restart prometheus and view targets
+systemctl restart prometheus   
+sleep 6
+curl -s http:/localhost:9090/api/v1/targets | jq
+
+# View the replaceped target
+
+    "labels": {
+      "instance": "localhost:9090",
+      "job": "prometheus"
+    }
+
+Note => The "discoveredLabels" map may still contain the "env" key-value pair because its
+        metadata was collected from the file_sd.json file.
+        
+# Delete cluster
+kind delete cluster

@@ -1,0 +1,135 @@
+# Re-labeling ("replace" action)
+
+The "replace" action replaces the value of a label used by a scraped target.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, and 18 except creating a cluster
+# But in Lab 03 also ssh into kind-worker2
+# In Lab 18, add "172.18.0.4:9100" as a target when creating the service discovery file
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Add a new label to the service discovery file for each target in the "node" job
+cd /etc/prometheus/
+vi file-sd.json
+
+[
+  {
+    "labels": {
+      "job": "node",
+      "env": "stage"
+    },
+    "targets": [
+      "172.18.0.3:9100"
+    ]
+  },
+  {
+    "labels": {
+      "job": "node",
+      "env": "dev"
+    },
+    "targets": [
+      "172.18.0.4:9100"
+    ]
+  }
+]
+
+# Restart prometheus and view targets
+systemctl restart prometheus
+sleep 6
+curl -s http:/localhost:9090/api/v1/targets | jq
+
+##############################################
+##############################################
+
+### Re-label the node target using the "replace" action
+source_labels = These are the labels you are starting with.
+target_label = This is the particular label that you want to modify or create based on the values from source_labels.
+replacement = The value that will replace the matched regex.
+
+# Modify the label value by using the existing label key in target_label
+vi prometheus.yml
+
+- job_name: "node"
+  relabel_configs:
+  - source_labels: [env]
+    action: "replace"
+    regex: "dev"
+    target_label: "env"
+    replacement: "development"
+
+If a target in this job has "dev" as a label value, it will be modified to "development".
+Since one target does, it will be replaced.
+
+# Restart prometheus and view targets
+systemctl restart prometheus   
+sleep 6
+curl -s http:/localhost:9090/api/v1/targets | jq
+
+# View the replaced label value
+
+        "discoveredLabels": {
+          "__address__": "172.18.0.4:9100",
+          "__meta_filepath": "/etc/prometheus/file-sd.json",
+          "__metrics_path__": "/metrics",
+          "__scheme__": "http",
+          "__scrape_interval__": "15s",
+          "__scrape_timeout__": "10s",
+          "env": "dev",
+          "job": "node"
+        },
+        "labels": {
+          "env": "development",
+          "instance": "172.18.0.4:9100",
+          "job": "node"
+        }
+
+The relabeling process occurs after the labels are discovered. Prometheus first collects the metadata
+(like "env: dev" from file_sd.json), and then it applies the relabeling rules based on the discovered labels.
+
+
+# Create a new label key by specifying it in the target_label attribute
+vi prometheus.yml
+
+- job_name: "node"
+  relabel_configs:
+  - source_labels: [env]
+    action: "replace"
+    regex: (.*)
+    target_label: "enviroment"
+    replacement: "$1"
+
+$1 captures the label value of the label key "env"
+
+# Restart prometheus and view targets
+systemctl restart prometheus   
+sleep 6
+curl -s http:/localhost:9090/api/v1/targets | jq
+
+# View the replaceped target
+
+        "labels": {
+          "env": "dev",
+          "enviroment": "dev",
+          "instance": "172.18.0.4:9100",
+          "job": "node"
+        }
+    
+# Delete cluster
+kind delete cluster

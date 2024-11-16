@@ -1,0 +1,84 @@
+# Re-labeling ("labeldrop" action)
+
+The "labeldrop" action deletes a label used by a scraped target. But the target will still be scraped.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, and 18 except creating a cluster
+# But in Lab 03 also ssh into kind-worker2
+# In Lab 18, add "172.18.0.4:9100" as a target when creating the service discovery file
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+
+# Add a new label to the service discovery file for each target in the "node" job
+cd /etc/prometheus/
+vi file-sd.json
+
+[
+  {
+    "labels": {
+      "job": "node",
+      "env": "stage"
+    },
+    "targets": [
+      "172.18.0.3:9100"
+    ]
+  },
+  {
+    "labels": {
+      "job": "node",
+      "env": "dev"
+    },
+    "targets": [
+      "172.18.0.4:9100"
+    ]
+  }
+]
+
+##############################################
+##############################################
+
+# Delete the "env" label using the "labeldrop" action
+
+vi prometheus.yml
+
+- job_name: "node"
+  relabel_configs:
+  - action: "labeldrop"
+    regex: "env"
+
+If a target in this job has "env" as a label key, its key-value pair will be deleted.
+But the target will still be scraped.
+
+# Restart prometheus and view targets
+systemctl restart prometheus   
+curl -s http:/localhost:9090/api/v1/targets | jq
+
+# View the replaceped target
+
+Note = The "discoveredLabels" may still contain the "env" key-value pair because its
+metadata was collected from the file_sd.json file.
+
+        "labels": {
+          "instance": "localhost:9090",
+          "job": "prometheus"
+        }
+        
+# Delete cluster
+kind delete cluster
