@@ -1,0 +1,163 @@
+# Alerts
+
+Alerts sends notifications based on defined conditions that are met.
+Conditions are defined using promql.
+
+When alerts are triggered by prometheus, the alert manager sends the notifications.
+
+Alerts are defined as a rule. Similar to how recording rules are defined.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, 18, and 27 except creating a cluster
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Create an alert rule
+cd /etc/prometheus
+nano first_rules.yml
+
+groups:
+  - name: example1
+    interval: 15s
+    rules:
+      - alert: node down
+        expr: up{job="node"} == 0
+        for: 10s
+        
+vi prometheus.yml
+
+rule_files:
+  - "first_rules.yml"
+  
+# Restart prometheus and check rules on your prometheus browser page
+systemctl restart prometheus
+
+# View rules
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+##############################################
+##############################################
+
+Alert states
+1. inactive = No results yet
+2. pending = Results returned, but not at critical level yet.
+3. firing = critical level (above the "for" condition)
+
+##############################################
+##############################################
+
+# Stop a node to trigger an alert
+docker stop kind-worker
+
+# View the alert in pending state
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+{
+  "status": "success",
+  "data": {
+    "groups": [
+      {
+        "name": "example1",
+        "file": "/etc/prometheus/first_rules.yml",
+        "rules": [
+          {
+            "state": "pending",
+            "name": "node down",
+            "query": "up{job=\"node\"} == 0",
+            "duration": 10,
+            "keepFiringFor": 0,
+            "labels": {},
+            "annotations": {},
+            "alerts": [
+              {
+                "labels": {
+                  "alertname": "node down",
+                  "instance": "172.18.0.3:9100",
+                  "job": "node"
+                },
+                "annotations": {},
+                "state": "pending",
+                "activeAt": "2024-11-16T15:38:54.411055191Z",
+                "value": "0e+00"
+              }
+            ],
+            "health": "ok",
+            "evaluationTime": 0.000273792,
+            "lastEvaluation": "2024-11-16T15:38:54.416890151Z",
+            "type": "alerting"
+          }
+        ],
+        "interval": 15,
+        "limit": 0,
+        "evaluationTime": 0.000293257,
+        "lastEvaluation": "2024-11-16T15:38:54.416873871Z"
+      }
+    ]
+  }
+}
+
+# View the alert in firing state
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+{
+  "status": "success",
+  "data": {
+    "groups": [
+      {
+        "name": "example1",
+        "file": "/etc/prometheus/first_rules.yml",
+        "rules": [
+          {
+            "state": "firing",
+            "name": "node down",
+            "query": "up{job=\"node\"} == 0",
+            "duration": 10,
+            "keepFiringFor": 0,
+            "labels": {},
+            "annotations": {},
+            "alerts": [
+              {
+                "labels": {
+                  "alertname": "node down",
+                  "instance": "172.18.0.3:9100",
+                  "job": "node"
+                },
+                "annotations": {},
+                "state": "firing",
+                "activeAt": "2024-11-16T15:38:54.411055191Z",
+                "value": "0e+00"
+              }
+            ],
+            "health": "ok",
+            "evaluationTime": 0.000310332,
+            "lastEvaluation": "2024-11-16T15:39:09.416910613Z",
+            "type": "alerting"
+          }
+        ],
+        "interval": 15,
+        "limit": 0,
+        "evaluationTime": 0.000329306,
+        "lastEvaluation": "2024-11-16T15:39:09.416895657Z"
+      }
+    ]
+  }
+}
+
+# Delete cluster
+kind delete cluster

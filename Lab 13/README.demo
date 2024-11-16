@@ -36,7 +36,7 @@ rule_files:
 # Restart prometheus and check rules on your prometheus browser page
 systemctl restart prometheus
 
-# node_filesystem_free_bytes (Free space for for both root and non-root)
+# node_filesystem_free_bytes (Free space for both root and non-root)
 # node_filesystem_avail_bytes (Usable space only for non-root users)
 # The ratio=1: All free space is accessible to non-root users (no reserved space).
 # Ratio = 1.2: There’s 20% more total free space than what non-root users can access.
