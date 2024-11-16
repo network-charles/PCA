@@ -1,0 +1,80 @@
+# Push gateway installed on bare metal and ran as a systemd service
+
+Push gateway recieve metrics from a batch jobs. The prometheus server
+then scrapes the push gateway like every other target.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, and 18 except creating a cluster
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Install the push gateway
+wget https://github.com/prometheus/pushgateway/releases/download/v1.10.0/pushgateway-1.10.0.linux-amd64.tar.gz
+tar xvxf pushgateway-1.10.0.linux-amd64.tar.gz
+cd pushgateway-1.10.0.linux-amd64
+./pushgateway
+
+#######################################################
+
+# close the process and make it a service
+
+# copy the pushgateway file
+cp pushgateway /usr/local/bin
+
+# create a user who can't log in
+useradd --no-create-home --shell /bin/false pushgateway
+
+# assign the node-exporter user to the directory
+chown pushgateway:pushgateway /usr/local/bin/pushgateway
+
+# create the systemd service
+nano /etc/systemd/system/pushgateway.service
+
+# add the below command
+[Unit]
+Description=pushgateway
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=pushgateway
+Group=pushgateway
+Type=simple
+ExecStart=/usr/local/bin/pushgateway
+
+[Install]
+WantedBy=multi-user.target
+
+# Reload the systemd daemon
+systemctl daemon-reload
+
+# Start the pushgateway service
+systemctl start pushgateway.service
+
+# view the status of the pushgateway service
+systemctl status pushgateway.service 
+
+# Enable it to start on boot:
+systemctl enable pushgateway
+
+# Test the endpoint
+curl localhost:9091/metrics
+
+# Delete cluster
+kind delete cluster

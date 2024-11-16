@@ -1,0 +1,100 @@
+# Push gateway demo
+
+Metrics are pushed to the gateway via HTTP requests or the prometheus client library.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, 18, and 27 except creating a cluster
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Push a single metric via a POST request
+echo "sample_metric 1" | curl --data-binary @- "http://localhost:9091/metrics/job/sample"
+
+# View metric
+curl -s localhost:9091/metrics | grep sample
+
+push_failure_time_seconds{instance="",job="sample"} 0
+push_time_seconds{instance="",job="sample"} 1.7317675384429765e+09
+# TYPE sample_metric untyped
+sample_metric{instance="",job="sample"} 1
+
+# Push multiple metrics
+cat <<EOF | curl --data-binary @- "http://localhost:9091/metrics/job/test/label_key1/label_value1"
+metric_one{label_key2="label_value2"} 42
+metric_two 12
+EOF
+
+# View metrics
+curl -s localhost:9091/metrics | grep test
+
+metric_one{instance="",job="test",label_key1="label_value1",label_key2="label_value2"} 42
+metric_two{instance="",job="test",label_key1="label_value1"} 12
+
+##############################################
+##############################################
+
+GROUPING
+
+A job name + label = group
+Metrics sent with a specific URL path are a part of a group.
+
+Example:
+URL = "http://localhost:9091/metrics/job/test/label_key1/label_value1"
+
+job = job/test/
+label = /label_key1/label_value1
+
+metrics = metric_one{label_key2="label_value2"} 42
+          metric_two 12
+
+All the above values in this example belong to one group.
+
+##############################################
+##############################################
+
+Pushing a metric via a PUT request replaces all targeted metric within a group.
+
+# Send a PUT for the previous POST request data
+cat <<EOF | curl -X PUT --data-binary @- "http://localhost:9091/metrics/job/test/label_key1/label_value1"
+metric_one{label_key2="label_value2"} 49
+EOF
+
+# View metrics
+curl -s localhost:9091/metrics | grep test
+
+metric_one{instance="",job="test",label_key1="label_value1",label_key2="label_value2"} 49
+
+Notice that metric_two has been deleted since this is a PUT request.
+
+##############################################
+##############################################
+
+Using a DELETE request deletes all metrics within a group.
+
+# Send a DELETE for the previous POST request data
+cat <<EOF | curl -X DELETE --data-binary @- "http://localhost:9091/metrics/job/test/label_key1/label_value1"
+EOF
+
+# View metrics
+curl -s localhost:9091/metrics | grep test
+
+Empty result because the metric has been deleted.
+
+# Delete cluster
+kind delete cluster

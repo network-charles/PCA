@@ -25,6 +25,7 @@ To set up a File SD, a json file need to contain each targets to scrape.
 
 # Access node
 docker exec -it kind-control-plane bash
+apt install vim -y
 
 # Add your service discovery file 
 cd /etc/prometheus/

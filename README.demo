@@ -75,3 +75,10 @@ Re-labeling a metric after a scrape ("keep" action)
 
 # Lab 26
 Re-labeling a metric label after a scrape ("replace" action)
+
+# Lab 27
+Push gateway installed on bare metal and ran as a systemd service
+
+# Lab 28
+Push gateway demo
+
