@@ -1,0 +1,71 @@
+# Re-labeling a metric after a scrape ("replace" action)
+
+"metric_relabel_configs" is used to rename a metric.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, and 18 except creating a cluster
+# But in Lab 03 also ssh into kind-worker2
+# In Lab 18, add "172.18.0.4:9100" as a target when creating the service discovery file
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Add a new target to the service discovery file
+cd /etc/prometheus/
+vi file-sd.json
+
+[
+  {
+    "labels": {
+      "job": "node"
+    },
+    "targets": [
+      "172.18.0.3:9100"
+    ]
+  },
+  {
+    "labels": {
+      "job": "node"
+    },
+    "targets": [
+      "172.18.0.4:9100"
+    ]
+  }
+]
+
+##############################################
+##############################################
+
+# Rename a metric from "node_cpu_seconds_total" to "host_cpu_seconds_total"
+vi prometheus.yml
+
+- job_name: "node"
+  metric_relabel_configs:
+  - source_labels: [__name__]
+    regex: "node_cpu_seconds_total"
+    action: "replace"
+    replacement: "host_cpu_seconds_total"
+    target_label: __name__
+
+# Restart prometheus and view the metric
+systemctl restart prometheus   
+sleep 6
+curl localhost:9090/api/v1/query --data 'query=host_cpu_seconds_total' | jq
+
+# Delete cluster
+kind delete cluster

@@ -1,0 +1,92 @@
+# Re-labeling a metric label after a scrape ("replace" action)
+
+"metric_relabel_configs" is used to rename a metric.
+It can also be used to modify or create a label in a metric.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, and 18 except creating a cluster
+# But in Lab 03 also ssh into kind-worker2
+# In Lab 18, add "172.18.0.4:9100" as a target when creating the service discovery file
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+
+# Add a new target to the service discovery file
+cd /etc/prometheus/
+vi file-sd.json
+
+[
+  {
+    "labels": {
+      "job": "node"
+    },
+    "targets": [
+      "172.18.0.3:9100"
+    ]
+  },
+  {
+    "labels": {
+      "job": "node"
+    },
+    "targets": [
+      "172.18.0.4:9100"
+    ]
+  }
+]
+
+##############################################
+##############################################
+
+# For all metrics, take the metric label value where its key is "mountpoint" and
+# use it to create a new label key named "path".
+
+vi prometheus.yml
+
+- job_name: "node"
+  metric_relabel_configs:
+  - source_labels: [mountpoint]
+    regex: (.*)
+    action: replace
+    target_label: path
+    replacement: $1
+
+# Restart prometheus
+systemctl restart prometheus   
+sleep 6
+
+# View the metric
+curl localhost:9090/api/v1/query --data 'query=node_filesystem_avail_bytes' | jq
+
+  "metric": {
+    "__name__": "node_filesystem_avail_bytes",
+    "device": "tmpfs",
+    "env": "dev",
+    "fstype": "tmpfs",
+    "instance": "172.18.0.4:9100",
+    "job": "node",
+    "mountpoint": "/tmp",
+    "path": "/tmp"
+  },
+  "value": [
+    1731762541.874,
+    "2011639808"
+  ]
+
+# Delete cluster
+kind delete cluster

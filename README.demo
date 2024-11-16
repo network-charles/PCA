@@ -66,3 +66,12 @@ Re-labeling ("labeldrop" action)
 
 # Lab 23
 Re-labeling ("labelmap" action)
+
+# Lab 24
+Re-labeling a metric after a scrape ("replace" action)
+
+# Lab 25
+Re-labeling a metric after a scrape ("keep" action)
+
+# Lab 26
+Re-labeling a metric label after a scrape ("replace" action)

@@ -1,0 +1,122 @@
+# Re-labeling a metric after a scrape ("keep" action)
+
+"metric_relabel_configs" is used to rename a metric.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, and 18 except creating a cluster
+# But in Lab 03 also ssh into kind-worker2
+# In Lab 18, add "172.18.0.4:9100" as a target when creating the service discovery file
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+# Access node
+docker exec -it kind-control-plane bash
+
+
+# Add a new target to the service discovery file
+cd /etc/prometheus/
+vi file-sd.json
+
+[
+  {
+    "labels": {
+      "job": "node"
+    },
+    "targets": [
+      "172.18.0.3:9100"
+    ]
+  },
+  {
+    "labels": {
+      "job": "node"
+    },
+    "targets": [
+      "172.18.0.4:9100"
+    ]
+  }
+]
+
+##############################################
+##############################################
+
+# Keep the "node_arp_entries" metric
+vi prometheus.yml
+
+- job_name: "node"
+  metric_relabel_configs:
+  - source_labels: [__name__]
+    regex: node_arp_entries
+    action: keep
+    
+# Restart prometheus
+systemctl restart prometheus   
+sleep 6
+
+# View a different metric
+curl localhost:9090/api/v1/query --data 'query=host_cpu_seconds_total' | jq
+
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": []
+  }
+}
+
+Notice that no values were shown because the metric and other non-default oness not defined in the relabel config are gone.
+
+# View the metric kept
+curl localhost:9090/api/v1/query --data 'query=node_arp_entries' | jq
+
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "node_arp_entries",
+          "device": "eth0",
+          "env": "stage",
+          "instance": "172.18.0.3:9100",
+          "job": "node"
+        },
+        "value": [
+          1731761972.638,
+          "1"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "node_arp_entries",
+          "device": "eth0",
+          "env": "dev",
+          "instance": "172.18.0.4:9100",
+          "job": "node"
+        },
+        "value": [
+          1731761972.638,
+          "1"
+        ]
+      }
+    ]
+  }
+}
+
+It works.
+
+# Delete cluster
+kind delete cluster
