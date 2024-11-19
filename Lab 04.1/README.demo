@@ -1,0 +1,21 @@
+# Metric naming structure
+
+A metric name should follow this structure:
+
+<namespace>_<object>_<operation>_<unit>
+
+# Components
+1. Namespace = The application or domain prefix.
+Examples: app, prometheus, node, http.
+
+2. Object = The entity or resource being measured.
+Examples: requests, memory, cpu.
+
+3. Operation = The specific action or state being measured (e.g., count, duration, usage).
+Examples: total, seconds, usage.
+
+4. Unit = The unit of measurement in plural form (if applicable).
+Examples: seconds, bytes, percent.
+
+# Resource
+https://www.youtube.com/watch?v=KXq5ibSj2qA

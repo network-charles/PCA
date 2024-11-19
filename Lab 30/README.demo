@@ -1,0 +1,97 @@
+# Alerts (labels and annotations)
+
+- You can add labels to alerts so you can classify them.
+- Annotations only provide additional information to an alert.
+
+Labels and annotations values can be templated using Go.
+> {{.Labels}} are alert labels
+> {{.Labels.instance}} are instance labels
+> {{.Value}} are firing sample values
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, and 18, except creating a cluster
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+##############################################
+##############################################
+
+LABELS
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Create an alert rule
+cd /etc/prometheus
+nano first_rules.yml
+
+groups:
+  - name: node
+    interval: 15s
+    rules:
+      - alert: node down
+        expr: up{job="node"} == 0
+        for: 10s
+        labels:
+          severity: warning
+
+# Restart prometheus and check rules on your prometheus browser page
+systemctl restart prometheus
+
+# View rule before alert
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+# Stop a node to trigger an alert
+docker stop kind-worker
+
+# View rules after alert
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+##############################################
+##############################################
+
+ANNOTATIONS
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Create an alert rule
+cd /etc/prometheus
+nano first_rules.yml
+
+groups:
+  - name: node
+    interval: 15s
+    rules:
+      - alert: node down
+        expr: up{job="node"} == 0
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          description: The node having an IP address to port mapping of {{.Labels.instance}} is down.
+
+# Restart prometheus and check rules on your prometheus browser page
+systemctl restart prometheus
+
+# View rule before alert
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+# Stop a node to trigger an alert
+docker stop kind-worker
+
+# View rules after alert
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+# Delete cluster
+kind delete cluster

@@ -33,7 +33,7 @@ cd /etc/prometheus
 nano first_rules.yml
 
 groups:
-  - name: example1
+  - name: node
     interval: 15s
     rules:
       - alert: node down

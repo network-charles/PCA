@@ -11,8 +11,10 @@ kind create cluster --config cluster.yaml
 Recording rules evaluates a promql query and stores the results. Rules are ran sequentially, and can also be referenced.
 Each rule group should be specific to a scraping job.
 
+# Naming a recording rule
 Rule naming syntax = level:metric_name:operations
-level is the aggregation level by labels
+
+- level is the aggregation level by labels
 
 # Create a rule
 apt install vim -y

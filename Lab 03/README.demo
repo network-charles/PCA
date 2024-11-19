@@ -28,12 +28,10 @@ curl localhost:9090
 # Query prometheus
 View all metrics starting with "node"
 
-
+#######################################################
 #######################################################
 
-
 # close the process and make it a service
-
 
 # copy the node_exporter file
 cp node_exporter /usr/local/bin

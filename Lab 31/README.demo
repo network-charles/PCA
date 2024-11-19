@@ -1,0 +1,95 @@
+# Alertmanager installed on bare metal and ran as a service
+
+The alertmanager is a running process that recieves alerts from alertmanager,
+converts them to notifications, and sends it to a notification service.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, and 18 except creating a cluster
+
+# Access node
+docker exec -it kind-worker bash
+apt update && apt install wget nano vim -y
+
+# install alertmanager
+wget https://github.com/alertmanager/alertmanager/releases/download/v0.27.0/alertmanager-0.27.0.linux-amd64.tar.gz
+tar xvfz alertmanager-*.*-amd64.tar.gz
+cd alertmanager-*.*-amd64
+./alertmanager
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access alertmanager
+curl localhost:9090
+
+##############################################
+##############################################
+
+
+# close the process and make it a service
+
+# create a folder for the alertmanager
+mkdir /etc/alertmanager
+
+# copy the alertmanager config file to the created folder
+cp alertmanager.yml /etc/alertmanager
+
+# create a user who can't log in
+useradd --no-create-home --shell /bin/false alertmanager
+
+# assign the alertmanager user to the new folders
+chown alertmanager:alertmanager /etc/alertmanager
+
+# create a folder for the alertmanager data files
+mkdir /var/lib/alertmanager
+
+# assign the alertmanager user to the new folders
+chown -R alertmanager:alertmanager /etc/alertmanager
+
+# copy the alertmanager executables to the bin directory
+cp alertmanager /usr/local/bin
+cp amtool /usr/local/bin
+chown alertmanager:alertmanager /usr/local/bin/alertmanager
+
+# create the systemd service
+nano /etc/systemd/system/alertmanager.service
+
+# add the below command
+[Unit]
+Description=alertmanager
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=alertmanager
+Group=alertmanager
+Type=simple
+ExecStart=/usr/local/bin/alertmanager \
+    --config.file /etc/alertmanager/alertmanager.yml \
+    --storage.path /var/lib/alertmanager/ \
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+# Reload the systemd daemon
+systemctl daemon-reload
+
+# Start the alertmanager service
+systemctl start alertmanager.service
+
+# view the status of the alertmanager service
+systemctl status alertmanager.service 
+
+# Enable it to start on boot:
+systemctl enable alertmanager
+
+# Delete cluster
+kind delete cluster
