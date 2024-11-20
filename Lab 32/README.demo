@@ -26,7 +26,7 @@ alerting:
 # Restart the alertmanager process
 systemctl restart alertmanager
 
-# add a new label to each node
+# Add a new label key called "name" with its respective value to each node
 cd /etc/prometheus/
 bash -c 'cat <<EOF > file-sd.json
 [
@@ -49,6 +49,26 @@ bash -c 'cat <<EOF > file-sd.json
     ]
   }
 ]
+EOF'
+
+# Add a new label key called "name" with its respective value to each alert
+cd /etc/prometheus
+bash -c 'cat <<EOF > first_rules.yml
+groups:
+  - name: node
+    interval: 5s
+    rules:
+      - alert: Node Down
+        expr: up{name="kind-worker"} == 0
+        for: 5s
+        labels:
+          severity: warning
+          name: kind-worker
+      - alert: High CPU Usage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle",name="kind-worker2"}[1m])) * 100) > 90
+        labels:
+          severity: critical
+          name: kind-worker2
 EOF'
 
 # Restart prometheus
