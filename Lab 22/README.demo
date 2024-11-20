@@ -1,4 +1,4 @@
-# Re-labeling ("labeldrop" action)
+# Re-labeling ("labeldrop" action) using 2 worker nodes
 
 The "labeldrop" action deletes a label used by a scraped target. But the target will still be scraped.
 
@@ -24,7 +24,6 @@ curl localhost:9090
 
 # Access node
 docker exec -it kind-control-plane bash
-
 
 # Add a new label to the service discovery file for each target in the "node" job
 cd /etc/prometheus/
@@ -67,7 +66,8 @@ If a target in this job has "env" as a label key, its key-value pair will be del
 But the target will still be scraped.
 
 # Restart prometheus and view targets
-systemctl restart prometheus   
+systemctl restart prometheus
+sleep 6
 curl -s http:/localhost:9090/api/v1/targets | jq
 
 # View the replaceped target

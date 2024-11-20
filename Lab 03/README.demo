@@ -43,9 +43,7 @@ useradd --no-create-home --shell /bin/false node_exporter
 chown node_exporter:node_exporter /usr/local/bin/node_exporter
 
 # create the systemd service
-nano /etc/systemd/system/node_exporter.service
-
-# add the below command
+bash -c 'cat <<EOF > /etc/systemd/system/node_exporter.service
 [Unit]
 Description=node_exporter
 Wants=network-online.target
@@ -59,6 +57,7 @@ ExecStart=/usr/local/bin/node_exporter
 
 [Install]
 WantedBy=multi-user.target
+EOF'
 
 # Reload the systemd daemon
 systemctl daemon-reload

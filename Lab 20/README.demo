@@ -1,4 +1,4 @@
-# Re-labeling ("drop" action)
+# Re-labeling ("drop" action) using 2 worker nodes
 
 The "drop" action drop targets using the specified labels.
 

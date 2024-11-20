@@ -1,4 +1,4 @@
-# Re-labeling ("replace" action)
+# Re-labeling ("replace" action) using 2 worker nodes
 
 The "replace" action replaces the value of a label used by a scraped target.
 

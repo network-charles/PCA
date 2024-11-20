@@ -1,5 +1,7 @@
 # Alerts (labels and annotations)
 
+Alerts are notifications based on the result of a recording rule (See Lab 13).
+
 - You can add labels to alerts so you can classify them.
 - Annotations only provide additional information to an alert.
 
@@ -33,26 +35,42 @@ docker exec -it kind-control-plane bash
 
 # Create an alert rule
 cd /etc/prometheus
-nano first_rules.yml
-
+bash -c 'cat <<EOF > first_rules.yml
 groups:
   - name: node
-    interval: 15s
+    interval: 5s
     rules:
-      - alert: node down
+      - alert: Node Down
         expr: up{job="node"} == 0
-        for: 10s
+        for: 5s
         labels:
           severity: warning
+      - alert: High CPU Usage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle",job="node"}[1m])) * 100) > 90
+        labels:
+          severity: critical
+EOF'
 
+# apply rule
+vi prometheus.yml
+
+rule_files:
+  - "first_rules.yml"
+  
 # Restart prometheus and check rules on your prometheus browser page
 systemctl restart prometheus
 
 # View rule before alert
 curl -s http:/localhost:9090/api/v1/rules | jq
 
-# Stop a node to trigger an alert
+# Stop a node to trigger a "node down" alert
 docker stop kind-worker
+
+# Start the node and stress test it to trigger a "high cpu" alert
+docker start kind-worker bash
+docker exec -it kind-worker bash
+apt install stress
+stress --cpu 4 --timeout 60
 
 # View rules after alert
 curl -s http:/localhost:9090/api/v1/rules | jq
@@ -67,11 +85,10 @@ docker exec -it kind-control-plane bash
 
 # Create an alert rule
 cd /etc/prometheus
-nano first_rules.yml
-
+bash -c 'cat <<EOF > first_rules.yml
 groups:
   - name: node
-    interval: 15s
+    interval: 5s
     rules:
       - alert: node down
         expr: up{job="node"} == 0
@@ -80,6 +97,13 @@ groups:
           severity: warning
         annotations:
           description: The node having an IP address to port mapping of {{.Labels.instance}} is down.
+      - alert: High CPU Usage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle",job="node"}[1m])) * 100) > 90
+        labels:
+          severity: critical
+        annotations:
+          description: The node with IP address to port mapping of {{.Labels.instance}} is experiencing high CPU usage.
+EOF'
 
 # Restart prometheus and check rules on your prometheus browser page
 systemctl restart prometheus
@@ -87,8 +111,14 @@ systemctl restart prometheus
 # View rule before alert
 curl -s http:/localhost:9090/api/v1/rules | jq
 
-# Stop a node to trigger an alert
+# Stop a node to trigger a "node down" alert
 docker stop kind-worker
+
+# Start the node and stress test it to trigger a "high cpu" alert
+docker start kind-worker
+docker exec -it kind-worker
+apt install stress
+stress --cpu 4 --timeout 60
 
 # View rules after alert
 curl -s http:/localhost:9090/api/v1/rules | jq

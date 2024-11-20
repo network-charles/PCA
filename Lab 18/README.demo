@@ -29,18 +29,26 @@ apt install vim -y
 
 # Add your service discovery file 
 cd /etc/prometheus/
-nano file-sd.json
-
+bash -c 'cat <<EOF > file-sd.json
 [
   {
     "labels": {
       "job": "node"
     },
     "targets": [
-      "172.18.0.3:9100"
+      "172.18.0.2:9100"
+    ]
+  },
+    {
+    "labels": {
+      "job": "node",
+    },
+    "targets": [
+      "172.18.0.4:9100"
     ]
   }
 ]
+EOF'
 
 # Reference the file in your scrape config and remove the previous "node" target you specified
 vi prometheus.yml

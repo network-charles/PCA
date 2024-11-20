@@ -1,4 +1,4 @@
-# Re-labeling ("labelmap" action)
+# Re-labeling ("labelmap" action) using 2 worker nodes
 
 The "labelmap" replaces a label key. But the previous key will not be deleted.
 To delete the previous key, use a "labeldrop".
@@ -28,7 +28,6 @@ curl localhost:9090
 
 # Access node
 docker exec -it kind-control-plane bash
-
 
 # Add a new label to the service discovery file for each target in the "node" job
 cd /etc/prometheus/
@@ -80,7 +79,7 @@ systemctl restart prometheus
 sleep 6
 curl -s http:/localhost:9090/api/v1/targets | jq
 
-# View the replaceped target
+# View the replaced target
 
     "labels": {
       "instance": "localhost:9090",

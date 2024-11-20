@@ -8,8 +8,15 @@ kind create cluster --config cluster.yaml
 ##############################################
 ##############################################
 
-Recording rules evaluates a promql query and stores the results. Rules are ran sequentially, and can also be referenced.
-Each rule group should be specific to a scraping job.
+Recording rules evaluates a promql query and stores the results. as a new time series with a specified name (a metric name).
+This allows Prometheus to avoid re-evaluating complex queries every time
+they are needed and instead use the precomputed results.
+
+- Rules are ran sequentially, and can also be referenced.
+- Each rule group should be specific to a scraping job.
+
+- Annotations can be used to describe what a rule does. Templates can be used to add values to the description.
+  See https://prometheus.io/docs/prometheus/latest/configuration/template_examples/ for how to use templates.
 
 # Naming a recording rule
 Rule naming syntax = level:metric_name:operations
@@ -27,6 +34,8 @@ groups:
     rules:
       - record: node_filesystem_free_percent
         expr: 100 * node_filesystem_free_bytes{job="node"} / node_filesystem_size_bytes{job="node"}
+        annotations:
+          description: filesystem {{.Labels.device}} on {{.Labels.instance}} is low on space, current available space is {{.value}}.
       - record: node_filesystem_free_percent_avg
         expr: avg by(instance) (node_filesystem_free_percent)
         
@@ -37,15 +46,6 @@ rule_files:
   
 # Restart prometheus and check rules on your prometheus browser page
 systemctl restart prometheus
-
-# node_filesystem_free_bytes (Free space for both root and non-root)
-# node_filesystem_avail_bytes (Usable space only for non-root users)
-# The ratio=1: All free space is accessible to non-root users (no reserved space).
-# Ratio = 1.2: There’s 20% more total free space than what non-root users can access.
-# Higher Ratio (e.g., 1.5 or 2): Significant portion of free space is reserved, with only a fraction available to non-root users.
-
-# Percentage of free space available on filesystem, filtered by the job label.
-100 * node_filesystem_free_bytes{job="node"} / node_filesystem_size_bytes{job="node"}
 
 # Delete cluster
 kind delete cluster

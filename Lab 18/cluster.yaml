@@ -11,3 +11,4 @@ nodes:
   - containerPort: 9100 # The port of the node-exporter process running
     hostPort: 9100 # The host port you want to expose the k8s service
     protocol: TCP
+- role: worker

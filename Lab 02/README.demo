@@ -26,9 +26,8 @@ curl localhost:9090
 # Query prometheus
 View all metrics starting with "node"
 
-
 #######################################################
-
+#######################################################
 
 # close the process and make it a service
 
@@ -69,9 +68,7 @@ chown -R prometheus:prometheus /etc/prometheus/consoles/
 chown -R prometheus:prometheus /etc/prometheus/console_libraries
 
 # create the systemd service
-nano /etc/systemd/system/prometheus.service
-
-# add the below command
+bash -c 'cat <<EOF > /etc/systemd/system/prometheus.service
 [Unit]
 Description=Prometheus
 Wants=network-online.target
@@ -81,14 +78,15 @@ After=network-online.target
 User=prometheus
 Group=prometheus
 Type=simple
-ExecStart=/usr/local/bin/prometheus \
-    --config.file /etc/prometheus/prometheus.yml \
-    --storage.tsdb.path /var/lib/prometheus/ \
-    --web.console.templates=/etc/prometheus/consoles \
+ExecStart=/usr/local/bin/prometheus \\
+    --config.file /etc/prometheus/prometheus.yml \\
+    --storage.tsdb.path /var/lib/prometheus/ \\
+    --web.console.templates=/etc/prometheus/consoles \\
     --web.console.libraries=/etc/prometheus/console_libraries
 
 [Install]
 WantedBy=multi-user.target
+EOF'
 
 # Reload the systemd daemon
 systemctl daemon-reload

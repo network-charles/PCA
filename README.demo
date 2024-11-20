@@ -56,28 +56,28 @@ Instrumentations
 Service discovery
 
 # Lab 19
-Re-labeling ("keep" action)
+Re-labeling ("keep" action) using 2 worker nodes
 
 # Lab 20
-Re-labeling ("drop" action)
+Re-labeling ("drop" action) using 2 worker nodes
 
 # Lab 21
-Re-labeling ("replace" action)
+Re-labeling ("replace" action) using 2 worker nodes
 
 # Lab 22
-Re-labeling ("labeldrop" action)
+Re-labeling ("labeldrop" action) using 2 worker nodes
 
 # Lab 23
-Re-labeling ("labelmap" action)
+Re-labeling ("labelmap" action) using 2 worker nodes
 
 # Lab 24
-Re-labeling a metric after a scrape ("replace" action)
+Re-labeling a metric after a scrape ("replace" action) using 2 worker nodes
 
 # Lab 25
-Re-labeling a metric after a scrape ("keep" action)
+Re-labeling a metric after a scrape ("keep" action) using 2 worker nodes
 
 # Lab 26
-Re-labeling a metric label after a scrape ("replace" action)
+Re-labeling a metric label after a scrape ("replace" action) using 2 worker nodes
 
 # Lab 27
 Push gateway installed on bare metal and ran as a systemd service
@@ -93,3 +93,6 @@ Alerts (labels and annotations)
 
 # Lab 31
 Alertmanager installed on bare metal and ran as a service
+
+# Lab 32
+Alertmanager demo using 2 worker nodes

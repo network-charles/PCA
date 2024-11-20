@@ -1,4 +1,4 @@
-# Re-labeling ("keep" action)
+# Re-labeling ("keep" action) using 2 worker nodes
 
 Re-labeling happens before/after a scrape. It does the following:
 

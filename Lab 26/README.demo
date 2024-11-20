@@ -1,4 +1,4 @@
-# Re-labeling a metric label after a scrape ("replace" action)
+# Re-labeling a metric label after a scrape ("replace" action) using 2 worker nodes
 
 "metric_relabel_configs" is used to rename a metric.
 It can also be used to modify or create a label in a metric.

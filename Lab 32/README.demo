@@ -1,0 +1,174 @@
+# Alertmanager demo using 2 worker nodes
+
+The alertmanager is a running process that recieves alerts from alertmanager,
+converts them to notifications, and sends it to a notification service.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, 18, 30, and 31, except creating a cluster.
+# Repeat Lab 03 for each worker node
+# In Lab 18 verify the ip address of each worker node
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# point to the alertmanager process
+cd /etc/prometheus/
+vi prometheus.yml
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - "localhost:9093"
+
+# Restart the alertmanager process
+systemctl restart alertmanager
+
+# add a new label to each node
+cd /etc/prometheus/
+bash -c 'cat <<EOF > file-sd.json
+[
+  {
+    "labels": {
+      "job": "node",
+      "name": "kind-worker2"
+    },
+    "targets": [
+      "172.18.0.2:9100"
+    ]
+  },
+    {
+    "labels": {
+      "job": "node",
+      "name": "kind-worker"
+    },
+    "targets": [
+      "172.18.0.4:9100"
+    ]
+  }
+]
+EOF'
+
+# Restart prometheus
+systemctl restart prometheus
+
+##############################################
+##############################################
+
+RECIEVERS
+They recieve alerts and send it to users.
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# set up receivers
+cd /etc/alertmanager/
+nano alertmanager.yml 
+
+route:
+  receiver: Node Down # default receiver
+receivers:
+  - name: Node Down
+    discord_configs:
+      - webhook_url: https://discord.com/api/webhooks/13
+  - name: High CPU Usage
+    discord_configs:
+      - webhook_url: https://discord.com/api/webhooks/13
+
+A notification template can also be applied. See https://prometheus.io/docs/alerting/latest/notifications/#data
+for common attributes.
+Use ">" for a multi-line text.
+
+# Restart the alertmanager process
+systemctl restart alertmanager
+
+# Stop a node to trigger an alert
+docker stop kind-worker
+
+# View the alert on your discord channel or via CLI
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+##############################################
+##############################################
+
+ROUTES
+
+In the first example on using receivers, we specified a default reciever in the route block. Here, we can
+customize which receiver gets notified based on a label.
+
+# set up routes
+cd /etc/alertmanager/
+vi alertmanager.yml
+
+route:
+  group_by: ['alertname']
+  group_wait: 1s
+  group_interval: 1s
+  repeat_interval: 1h
+  receiver: High CPU Usage # a default receiver to fall back to
+  routes:
+  - matchers: [name=kind-worker]
+    receiver: Node Down
+  - matchers: [name=kind-worker2]
+    receiver: High CPU Usage
+
+The default receiver is a distraction. It can't be triggered because the node CPU usage is low.
+
+# Restart the alertmanager process
+systemctl restart alertmanager
+
+# For troubleshooting use
+journalctl -u alertmanager.service -f
+
+# Stop a node having a label "name=kind-worker" to trigger a firing alert
+docker stop kind-worker
+sleep 10
+
+# Start a node to trigger a resolved alert
+docker start kind-worker
+
+# View the alert on your discord channel or via CLI
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+##############################################
+
+# Update the default receiver
+cd /etc/alertmanager/
+vi alertmanager.yml
+
+route:
+  receiver: Node Down
+
+The default receiver is a distraction. It can't be triggered because the node isn't down.
+
+# Stress test the node having a label "name=kind-worker2" to trigger a "high cpu" alert
+docker exec -it kind-worker2 bash
+apt install stress
+stress --cpu 4 --timeout 60
+
+# View rules after alert
+curl -s http:/localhost:9090/api/v1/rules | jq
+
+##############################################
+##############################################
+
+GLOBAL CONFIGS
+
+They are key-value labels that can be applied over a receiver, inhibit rule, or route label.
+
+global:
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+# Delete cluster
+kind delete cluster
