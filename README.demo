@@ -96,3 +96,6 @@ Alertmanager installed on bare metal and ran as a service
 
 # Lab 32
 Alertmanager demo using 2 worker nodes
+
+# Lab 33
+Inhibition alert rules using 2 worker nodes

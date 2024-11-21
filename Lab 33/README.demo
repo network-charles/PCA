@@ -1,0 +1,100 @@
+# Inhibition alert rules using 2 worker nodes
+
+Inhibition rules prevent less important alerts from sending notifications to receivers if
+a more severe alert having the same label is already active.
+
+inhibit_rules:
+  - source_matchers:
+      severity: 'critical'
+    target_matchers:
+      severity: 'warning'
+    equal: ['job']
+
+In the above inhibition rule, the label key-value pair that matches both rules is "job".
+Where "job=node".
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Repeat everything in Lab 02, 03, 18, 30, 31, and 33, except creating a cluster.
+# Repeat Lab 03 for each worker node
+# In Lab 18 verify the ip address of each worker node
+
+# Access node
+docker exec -it kind-control-plane bash
+
+# Add a matching label with a key called "job" for both alert rules
+cd /etc/prometheus
+bash -c 'cat <<EOF > first_rules.yml
+groups:
+  - name: node
+    interval: 5s
+    rules:
+      - alert: Node Down
+        expr: up{name="kind-worker"} == 0
+        for: 5s
+        labels:
+          severity: warning
+          name: kind-worker
+          job: node
+      - alert: High CPU Usage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle",name="kind-worker2"}[1m])) * 100) > 90
+        labels:
+          severity: critical
+          name: kind-worker2
+          job: node
+EOF'
+
+# Restart prometheus and check rules on your prometheus browser page
+systemctl restart prometheus
+
+# Add inhibition rules targetting the label key "job"
+cd /etc/alertmanager
+vi alertmanager.yml
+
+inhibit_rules:
+  - source_matchers:
+      severity: 'critical'
+    target_matchers:
+      severity: 'warning'
+    equal: ['job']
+
+# Restart the alertmanager process
+systemctl restart alertmanager
+
+# Stress test the node having a label "name=kind-worker2" to trigger a "high cpu" alert
+docker exec -it kind-worker2 bash
+apt install stress
+stress --cpu 4
+
+# View alerts
+curl -s http:/localhost:9090/api/v1/alerts | jq
+
+# Stop a node to trigger a "node down" alert
+docker stop kind-worker
+
+# View alerts
+curl -s http:/localhost:9090/api/v1/alerts | jq
+
+Notice that both alers are firing, however, only one notification for the "High CPU Usage" alert is sent to discord.
+
+# Trigger the "Node Down" notification
+Cancel the stress test using the CTRL+C command.
+
+Notice that a firing "Node Down" notification has been sent to discord.
+
+# Start the node to end the test
+docker start kind-worker 
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+# Delete cluster
+kind delete cluster

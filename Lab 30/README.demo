@@ -60,8 +60,8 @@ rule_files:
 # Restart prometheus and check rules on your prometheus browser page
 systemctl restart prometheus
 
-# View rule before alert
-curl -s http:/localhost:9090/api/v1/rules | jq
+# View alerts
+curl -s http:/localhost:9090/api/v1/alerts | jq
 
 # Stop a node to trigger a "node down" alert
 docker stop kind-worker
@@ -72,8 +72,8 @@ docker exec -it kind-worker bash
 apt install stress
 stress --cpu 4 --timeout 60
 
-# View rules after alert
-curl -s http:/localhost:9090/api/v1/rules | jq
+# View alerts
+curl -s http:/localhost:9090/api/v1/alerts | jq
 
 ##############################################
 ##############################################
@@ -120,8 +120,8 @@ docker exec -it kind-worker
 apt install stress
 stress --cpu 4 --timeout 60
 
-# View rules after alert
-curl -s http:/localhost:9090/api/v1/rules | jq
+# View alerts
+curl -s http:/localhost:9090/api/v1/alerts | jq
 
 # Delete cluster
 kind delete cluster

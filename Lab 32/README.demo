@@ -181,6 +181,13 @@ They are key-value labels that can be applied over a receiver, inhibit rule, or 
 global:
 
 ##############################################
+##############################################
+
+SILENCE
+
+During a maintenance window where they may be downtimes, you can prevent alerts from being generated.
+
+##############################################
 # Expose cloud9 security group to the internet
 ##############################################
 

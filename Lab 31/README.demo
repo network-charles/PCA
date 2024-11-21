@@ -11,6 +11,9 @@ converts them to notifications, and sends it to a notification service.
           if you want to match the sub-route.
 > Recievers: Notification services that recieve alerts and sends it to a user.
 
+# Alert States
+Inactive → Pending → Firing → Resolved
+
 # Create cluster
 kind create cluster --config cluster.yaml
 
