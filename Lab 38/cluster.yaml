@@ -1,0 +1,25 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30909 # The port of the prometheus service running
+    hostPort: 9090 # The host port you want to expose the k8s service
+    protocol: TCP
+  - containerPort: 30000 # The port of the grafana service running
+    hostPort: 3000 # The host port you want to expose the k8s service
+    protocol: TCP
+  - containerPort: 30093 # The port of the alertmanager service running
+    hostPort: 9093 # The host port you want to expose the k8s service
+    protocol: TCP
+- role: worker
+  extraPortMappings:
+  - containerPort: 30008 # The port of the nginx service running
+    hostPort: 8080 # The host port you want to expose the k8s service
+    protocol: TCP
+  - containerPort: 30013 # The port of the nginx-metrics service running
+    hostPort: 9113 # The host port you want to expose the k8s service
+    protocol: TCP
+  - containerPort: 30910 # The port of the node-exporter service running
+    hostPort: 9100 # The host port you want to expose the k8s service
+    protocol: TCP

@@ -1,0 +1,22 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 9090 # The port of the prometheus process running
+    hostPort: 9090 # The host port you want to expose the k8s service
+    protocol: TCP
+  - containerPort: 9091 # The port of the push-gateway process running
+    hostPort: 9091 # The host port you want to expose the k8s service
+    protocol: TCP
+  - containerPort: 9093 # The port of the alertmanager process running
+    hostPort: 9093 # The host port you want to expose the k8s service
+    protocol: TCP
+  - containerPort: 9115 # The port of the blackbox_exporter process running
+    hostPort: 9115 # The host port you want to expose the k8s service
+    protocol: TCP
+- role: worker
+  extraPortMappings:
+  - containerPort: 9100 # The port of the node-exporter process running
+    hostPort: 9100 # The host port you want to expose the k8s service
+    protocol: TCP

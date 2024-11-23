@@ -1,0 +1,54 @@
+# Add rules to a K8s service behind an nginx pod
+
+Repeat Lab 36 before starting this Lab.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# View the label to add to your rule
+kubectl get prometheuses.monitoring.coreos.com -o yaml
+
+ruleSelector:
+  matchLabels:
+    release: prometheus
+
+# Add a rule
+kubectl apply -f rule.yaml
+
+# View rule
+kubectl describe prometheusrules.monitoring.coreos.com prometheus-rules
+ 
+# Check in prometheus
+curl -s http://localhost:9090/api/v1/rules | jq '.data.groups[].rules[] | select(.name == "nginx down")'
+
+{
+  "state": "inactive",
+  "name": "nginx down",
+  "query": "up{job=\"nginx-exporter\"} == 0",
+  "duration": 10,
+  "keepFiringFor": 0,
+  "labels": {
+    "severity": "warning"
+  },
+  "annotations": {
+    "description": "The {{.Labels.pod}} pod having an IP address to port mapping of {{.Labels.instance}} is down."
+  },
+  "alerts": [],
+  "health": "ok",
+  "evaluationTime": 0.000297424,
+  "lastEvaluation": "2024-11-23T06:31:56.887643777Z",
+  "type": "alerting"
+}
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+# Delete cluster
+kind delete cluster

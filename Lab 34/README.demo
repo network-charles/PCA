@@ -1,0 +1,90 @@
+# Blackbox exporter installed on bare metal and ran as a systemd service
+
+The Blackbox Exporter allows you to probe endpoints (HTTP, HTTPS, DNS, TCP, or ICMP) from the
+outside and check their availability and performance. It does this by simulating how a
+user or another system would interact with it.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Access node
+docker exec -it kind-control-plane bash
+apt update && apt install wget nano
+
+# install blackbox_exporter
+wget https://github.com/blackbox_exporter/blackbox_exporter/releases/download/v0.25.0/blackbox_exporter-0.25.0.linux-amd64.tar.gz
+tar xvfz blackbox_exporter-0.25.0.linux-amd64.tar.gz
+cd blackbox_exporter-0.25.0.linux-amd64
+./blackbox_exporter
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access blackbox_exporter
+curl localhost:9115
+
+#######################################################
+#######################################################
+
+# close the process and make it a service
+
+# go the blackbox_exporter folder
+cd blackbox_exporter-0.25.0.linux-amd64/
+
+# create a user who can't log in
+useradd --no-create-home --shell /bin/false blackbox_exporter
+
+# create a folder for the scrape file and copy the file into it
+mkdir /etc/blackbox_exporter
+cp blackbox.yml /etc/blackbox_exporter
+
+# create a folder for the blackbox_exporter data files
+mkdir /var/lib/blackbox_exporter
+
+# assign the blackbox_exporter user to the new folders
+chown blackbox_exporter:blackbox_exporter /etc/blackbox_exporter
+chown blackbox_exporter:blackbox_exporter /etc/blackbox_exporter/blackbox.yml
+chown blackbox_exporter:blackbox_exporter /var/lib/blackbox_exporter
+
+# move the executable to the /usr/bin/ directory
+cp blackbox_exporter /usr/local/bin/
+
+# assign the blackbox_exporter user to the folders
+chown blackbox_exporter:blackbox_exporter /usr/local/bin/blackbox_exporter
+
+# create the systemd service
+bash -c 'cat <<EOF > /etc/systemd/system/blackbox_exporter.service
+[Unit]
+Description=blackbox_exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=blackbox_exporter
+Group=blackbox_exporter
+Type=simple
+ExecStart=/usr/local/bin/blackbox_exporter \
+    --config.file /etc/blackbox_exporter/blackbox.yml \
+    
+[Install]
+WantedBy=multi-user.target
+EOF'
+
+# Reload the systemd daemon
+systemctl daemon-reload
+
+# Start the blackbox_exporter service
+systemctl start blackbox_exporter.service
+
+# view the status of the blackbox_exporter service
+systemctl status blackbox_exporter.service 
+
+# Enable it to start on boot:
+systemctl enable blackbox_exporter
+
+# Delete cluster
+kind delete cluster

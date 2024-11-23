@@ -1,0 +1,91 @@
+# Scrape metrics from a K8s service behind an nginx pod
+
+Prometheus metrics are usually exposed via a specific port and file path using an exporter.
+With nginx, the port is "9113", the path is "/nginx_status", and the exporter is "nginx-prometheus-exporter".
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Install prometheus stack
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/kube-prometheus-stack
+
+# Modify the prometheus service ports
+kubectl patch svc prometheus-kube-prometheus-prometheus -p '{"spec": {"type": "NodePort", "ports": [{"port": 9090, "protocol": "TCP", "nodePort": 30909}]}}'
+kubectl patch svc prometheus-prometheus-node-exporter -p '{"spec": {"type": "NodePort", "ports": [{"port": 9100, "protocol": "TCP", "nodePort": 30910}]}}'
+kubectl patch svc prometheus-kube-prometheus-alertmanager -p '{"spec": {"type": "NodePort", "ports": [{"port": 9093, "protocol": "TCP", "nodePort": 30093}]}}'
+kubectl patch svc prometheus-grafana -p '{"spec": {"type": "NodePort", "ports": [{"port": 80, "protocol": "TCP", "nodePort": 30000}]}}'
+
+##############################################
+##############################################
+
+# Deploy an nginx deployment and service
+kubectl apply -f configmap.yaml
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+
+# Test that the nginx pod is reachable
+curl localhost:8080
+
+# Get the serviceMonitorSelector label to add to the service monitor label
+kubectl get crd
+kubectl get prometheuses.monitoring.coreos.com -o yaml
+
+serviceMonitorSelector:
+  matchLabels:
+    release: prometheus
+
+# Deploy a service monitor
+kubectl apply -f service-monitor.yaml
+
+# Check if the metric scraper container is up
+curl -s http://localhost:9090/api/v1/query --data "query=up{job=\"nginx-exporter\"}" | jq
+
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "up",
+          "container": "nginx-exporter",
+          "endpoint": "metrics",
+          "instance": "10.244.1.51:9113",
+          "job": "nginx-exporter",
+          "namespace": "default",
+          "pod": "nginx-server-6dc4648d65-dc2r7",
+          "service": "nginx-exporter"
+        },
+        "value": [
+          1732356791.977,
+          "1"
+        ]
+      }
+    ]
+  }
+}
+
+Value of 1 means its up
+
+OR
+
+curl -s localhost:9113/metrics | grep nginx_up             
+
+# HELP nginx_up Status of the last metric scrape
+# TYPE nginx_up gauge
+nginx_up 1
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+# Delete cluster
+kind delete cluster

@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: alert-nginx
+  labels:
+    release: prometheus
+spec:
+  route:
+    groupBy: ['__name__']
+    groupWait: 1s
+    groupInterval: 1m
+    repeatInterval: 1h
+    receiver: 'nginx down'
+  receivers:
+  - name: 'nginx down'
+    webhookConfigs:
+    - url: 'https://discord.com/api/webhooks/13'

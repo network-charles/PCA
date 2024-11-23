@@ -1,0 +1,67 @@
+# Blackbox demo using a http module as a probe
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Access node
+docker exec -it kind-control-plane bash
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access blackbox_exporter
+curl localhost:9115
+
+#######################################################
+#######################################################
+
+# Specify a http module
+cd /etc/blackbox_exporter
+vi blackbox.yml
+
+modules:
+  http_2xx:
+    prober: http
+    http:
+      preferred_ip_protocol: "ip4"
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      method: GET
+
+# Restart the blackbox_exporter service
+systemctl restart blackbox_exporter
+     
+# Add a blackbox scrape job
+cd /etc/prometheus
+nano prometheus.yml
+
+scrape_configs:
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]  # Probe type defined in blackbox.yml
+    static_configs:
+      - targets:
+          - bing.com  # Target to probe
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115  # Blackbox Exporter address
+
+# Restart the prometheus service
+systemctl restart prometheus
+
+# View targets
+curl http://localhost:9090/api/v1/targets | jq
+
+# Check if the probe is up
+curl -s http://localhost:9090/api/v1/query --data "query=probe_success" | jq
+
+# Delete cluster
+kind delete cluster

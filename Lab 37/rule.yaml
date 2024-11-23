@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    release: prometheus
+  name: prometheus-rules
+spec:
+  groups:
+  - name: nginx
+    rules:
+      - alert: nginx down
+        expr: nginx_up == 0
+        labels:
+          severity: warning
+        annotations:
+          description: Pops up if the {{.Labels.pod}} pod is/was down.

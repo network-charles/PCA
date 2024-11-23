@@ -99,3 +99,18 @@ Alertmanager demo using 2 worker nodes
 
 # Lab 33
 Inhibition alert rules using 2 worker nodes
+
+# Lab 34
+Blackbox exporter installed on bare metal and ran as a systemd service
+
+# Lab 35
+Blackbox demo using a http module as a probe
+
+# Lab 36
+Scrape metrics from a K8s service behind an nginx pod
+
+# Lab 37
+Add rules to a K8s service behind an nginx pod
+
+# Lab 38
+Add alertmanager rules to a K8s service behind an nginx pod

@@ -1,0 +1,90 @@
+# Add alertmanager rules to a K8s service behind an nginx pod
+
+Repeat Lab 36 and 37 before starting this Lab.
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# View the label to add to your alert
+The K8s operator helm chart did not specify a label to discover AlertmanagerConfig objects.
+
+kubectl get alertmanagers.monitoring.coreos.com -o yaml | grep alertmanagerConfigSelector
+
+alertmanagerConfigSelector: {}
+
+# Add a label via the helm chart
+helm show values prometheus-community/kube-prometheus-stack > values.yaml 
+
+alertmanagerConfigSelector:
+  matchLabels:
+    release: prometheus
+
+helm upgrade prometheus prometheus-community/kube-prometheus-stack -f values.yaml 
+
+# Modify the prometheus service ports again
+kubectl patch svc prometheus-kube-prometheus-prometheus -p '{"spec": {"type": "NodePort", "ports": [{"port": 9090, "protocol": "TCP", "nodePort": 30909}]}}'
+kubectl patch svc prometheus-prometheus-node-exporter -p '{"spec": {"type": "NodePort", "ports": [{"port": 9100, "protocol": "TCP", "nodePort": 30910}]}}'
+kubectl patch svc prometheus-kube-prometheus-alertmanager -p '{"spec": {"type": "NodePort", "ports": [{"port": 9093, "protocol": "TCP", "nodePort": 30093}]}}'
+kubectl patch svc prometheus-grafana -p '{"spec": {"type": "NodePort", "ports": [{"port": 80, "protocol": "TCP", "nodePort": 30000}]}}'
+
+# Add an alert sent to discord
+kubectl apply -f alerts.yaml
+The above will not work because discords API is not a supported notification endpoint yet.
+(See https://docs.openshift.com/container-platform/4.12/rest_api/monitoring_apis/alertmanagerconfig-monitoring-coreos-com-v1beta1.html)
+
+# Use the below instead to modify the default alertmanager config
+kubectl get secret alertmanager-prometheus-kube-prometheus-alertmanager -o jsonpath='{.data.alertmanager\.yaml}' | base64 --decode > alertmanager.yaml
+
+# Add your reciever and routes.
+vi alertmanager.yaml
+
+receivers:
+- name: 'nginx down'
+  discord_configs:
+    - webhook_url: 'https://discord.com/api/webhooks/13'
+route:
+  - matchers:
+    - alertname = "nginx down"
+    receiver: "nginx down"
+
+# Apply the new alertmanager config
+kubectl delete secret alertmanager-prometheus-kube-prometheus-alertmanager
+kubectl create secret generic alertmanager-prometheus-kube-prometheus-alertmanager \
+  --from-file=alertmanager.yaml=alertmanager.yaml
+kubectl delete pod alertmanager-prometheus-kube-prometheus-alertmanager-0 
+
+# Check if the metric scraper container is up
+curl -s http://localhost:9090/api/v1/query --data "query=nginx_up" | jq
+
+# Check if rule is correct 
+curl -s http://localhost:9090/api/v1/rules | jq '.data.groups[].rules[] | select(.name == "nginx down")'
+
+# Block incoming communication to the nginx application to trigger an alert
+kubectl edit cm nginx-config 
+
+location /nginx_status {
+    stub_status;
+    #allow 127.0.0.1;  # allow requests from localhost
+    deny all;         # deny other hosts
+}
+
+kubectl rollout restart deployment nginx-server
+
+# Confirm that the metric scraper container is down
+curl -s http://localhost:9090/api/v1/query --data "query=nginx_up" | jq
+
+# View the alert or check discord
+curl -s http://localhost:9090/api/v1/rules | jq '.data.groups[].rules[] | select(.name == "nginx down")'
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+# Delete cluster
+kind delete cluster
