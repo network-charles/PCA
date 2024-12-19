@@ -32,7 +32,10 @@ kubectl apply -f alerts.yaml
 The above will not work because discords API is not a supported notification endpoint yet.
 (See https://docs.openshift.com/container-platform/4.12/rest_api/monitoring_apis/alertmanagerconfig-monitoring-coreos-com-v1beta1.html)
 
-# Use the below instead to modify the default alertmanager config
+So we have to use the defualt way which involves modifying the alertmanager file directly.
+Its saved as a k8s secrets objects.
+
+# Use the below to modify the default alertmanager config file
 kubectl get secret alertmanager-prometheus-kube-prometheus-alertmanager -o jsonpath='{.data.alertmanager\.yaml}' | base64 --decode > alertmanager.yaml
 
 # Add your reciever and routes.

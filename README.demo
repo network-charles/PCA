@@ -114,3 +114,6 @@ Add rules to a K8s service behind an nginx pod
 
 # Lab 38
 Add alertmanager rules to a K8s service behind an nginx pod
+
+# Lab 39
+Validate prometheus rule using "promtool check rule"

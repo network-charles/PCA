@@ -45,6 +45,7 @@ node_filesystem_avail_bytes{device!~"/boot.*"}
 node_filesystem_avail_bytes{instance="172.18.0.2:9100", nodedevice!~"rmfs"}
 
 ##############################################
+##############################################
 
 You can match a metric over a specific time (range vector):
 seconds [s]
@@ -60,6 +61,20 @@ node_filesystem_avail_bytes{instance="172.18.0.2:9100"}[1m]
 
 # Match all data from the "172.18.0.2:9100" instance in the last 1 day, 1 minute
 node_filesystem_avail_bytes{instance="172.18.0.2:9100"}[1d1m]
+
+##############################################
+##############################################
+
+You can also match based on regex.
+1. In regex, square brackets represent a value.
+E.g: status_code=~"40[31]" can mean 403 or 401.
+curl -s "http://localhost:9090/api/v1/query" --data-urlencode "query=apiserver_request_total{code=~'40[49]'}" | jq
+
+2. | matches each specified value(s) in regex too.
+curl -s "http://localhost:9090/api/v1/query" --data-urlencode "query=apiserver_request_total{code=~'404|409'}" | jq
+
+3. ... matches all values
+etc.
 
 # Delete cluster
 kind delete cluster

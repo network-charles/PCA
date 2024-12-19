@@ -1,0 +1,45 @@
+# Validate prometheus rule using "promtool check rule"
+
+# Create cluster
+kind create cluster --config cluster.yaml
+
+# Access node
+docker exec -it kind-control-plane bash
+apt update && apt install wget nano vim -y
+
+# Create a rule
+vi test.yml
+
+groups:
+  - name: example1
+    interval: 15s
+    rules:
+      - record: node_filesystem_free_percent
+        expr: 100 * node_filesystem_free_bytes{job="node"} / node_filesystem_size_bytes{job="node"}
+      - record: node_filesystem_free_percent_avg
+        expr: avg by(instance) (node_filesystem_free_percent)
+
+# install prometheus
+wget https://github.com/prometheus/prometheus/releases/download/v2.54.1/prometheus-2.54.1.linux-amd64.tar.gz
+tar xvfz prometheus-2.54.1.linux-amd64.tar.gz 
+cd prometheus-2.54.1.linux-amd64
+
+# Test rule
+./promtool check rules test.yml
+
+Checking test.yml
+  SUCCESS: 2 rules found
+
+
+##############################################
+# Expose cloud9 security group to the internet
+##############################################
+
+# View EC2 public IP
+curl checkip.amazonaws.com
+
+# Access prometheus
+curl localhost:9090
+
+# Delete cluster
+kind delete cluster

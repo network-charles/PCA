@@ -65,5 +65,48 @@ Its more visible when the excluded label is not present in all requests.
 # sum of CPU time without considering per instance (multiple exists) where the mode="user"
 sum without(instance) (node_cpu_seconds_total{mode="user"})
 
+##############################################
+##############################################
+
+In Prometheus, when performing operations like sum() or count(), you can specify optional grouping labels (e.g., by(job) or by(instance)).
+If you do not include any labels for grouping, the aggregation collapses all series into a single global value
+with an empty set {}. E.g: sum(up{job="node-exporter"}) has no by clause. This may result to {} 3.
+
+Since you didn’t specify grouping "by()", Prometheus assumes you want to drop all labels and collapse the data into a single result.
+
+# Compare promql results
+1. This filters the sum of all results by the "job" label
+curl -s http://localhost:9090/api/v1/query --data "query=sum by(job) (up)" | jq
+
+2. This filters the sum of all results without labels
+curl -s http://localhost:9090/api/v1/query --data "query=sum(up)" | jq
+
+3. This filters the sum of a specific result by its label.
+curl -s http://localhost:9090/api/v1/query --data "query=sum(up{job='node-exporter'})" | jq
+
+"metric": {}
+"value": ["2"]
+        
+##############################################
+##############################################
+
+In PromQL, a metric can end up only showing its labels (without the metric name) due to the use of functions
+or operators that strip the metric name.
+
+1. This has the metric name and other labels
+curl -s http://localhost:9090/api/v1/query --data "query=up" | jq
+
+"metric": {
+          "__name__": "up",
+          "job": "prometheus-kube-prometheus-alertmanager",
+          }
+
+2. This doesn't
+curl -s http://localhost:9090/api/v1/query --data "query=sum by(job) (up)" | jq
+
+"metric": {
+          "job": "kube-scheduler"
+        }
+        
 # Delete cluster
 kind delete cluster
